@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", // Support latest JS features
+    "module": "ESNext", // Use ES modules
+    "moduleResolution": "Node", // For resolving imports like Node
+    "lib": ["DOM", "ESNext"], // Support browser and latest JS
+    "declaration": true, // Generate .d.ts files
+    "declarationDir": "types", // Output directory for .d.ts
+    "outDir": "dist", // Where compiled files go
+    "strict": true, // Enable all strict type checks
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": false,
+    "sourceMap": false,
+    "jsx": "preserve", // Support JSX if needed
+    "types": ["vite/client", "node"], // For Vite-aware projects
+    "resolveJsonModule": true
+  },
+  "include": ["src", "src/index.ts"],
+  "exclude": ["node_modules", "dist"]
+}
