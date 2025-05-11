@@ -10,7 +10,7 @@ interface FloatingSettings {
   hasResize?: boolean;
 }
 
-export function useFloatingPanel(settings: FloatingSettings) {
+export function useSbFloatingPanel(settings: FloatingSettings) {
   const reference = ref<HTMLElement | null>(null);
   const floating = ref<FloatingElement | null>(null);
   const popperArrow = ref<HTMLElement | null>(null);

@@ -5,7 +5,6 @@
     "moduleResolution": "Node", // For resolving imports like Node
     "lib": ["DOM", "ESNext"], // Support browser and latest JS
     "declaration": true, // Generate .d.ts files
-    "declarationDir": "types", // Output directory for .d.ts
     "outDir": "dist", // Where compiled files go
     "strict": true, // Enable all strict type checks
     "noUnusedLocals": true,

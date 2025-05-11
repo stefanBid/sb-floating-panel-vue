@@ -4,20 +4,17 @@
   "description": "A lightweight Vue 3 composable hook built on top of @floating-ui/vue to manage floating panels with arrow and resize support.",
   "main": "dist/sb-floating-panel.umd.js",
   "module": "dist/sb-floating-panel.es.js",
-  "types": "dist/index.d.ts",
+ "types": "types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "import": "./dist/sb-floating-panel.es.js",
       "require": "./dist/sb-floating-panel.umd.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist", "types"],
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vue-tsc --emitDeclarationOnly && vite build",
     "lint": "eslint . --ext .ts",
     "check": "vue-tsc --noEmit"
   },
@@ -47,7 +44,6 @@
     "prettier": "^3.5.3",
     "typescript": "~5.7.2",
     "vite": "^6.3.5",
-    "vite-plugin-dts": "^4.5.3",
     "vue-tsc": "^2.2.10"
   }
 }

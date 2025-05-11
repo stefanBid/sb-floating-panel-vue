@@ -1,1 +1,1 @@
-export * from './use-sb-floating-panel/useSbFloatingPanel';
+export { useSbFloatingPanel } from './use-sb-floating-panel/useSbFloatingPanel';

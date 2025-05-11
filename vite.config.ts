@@ -1,12 +1,19 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import path from 'path';
+import dts from 'vite-plugin-dts';
+import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    dts({
+      outDir: 'dist',
+      insertTypesEntry: true,
+    }),
+  ],
   build: {
     lib: {
-      entry: path.resolve(__dirname, 'src/index.ts'),
+      entry: resolve(__dirname, 'src/index.ts'),
       name: 'SbFloatingPanel',
       fileName: (format) => `sb-floating-panel.${format}.js`,
       formats: ['es', 'umd'],
