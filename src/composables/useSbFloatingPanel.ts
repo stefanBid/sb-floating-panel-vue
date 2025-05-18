@@ -1,17 +1,101 @@
 import { useFloating, flip, shift, autoUpdate, offset, arrow } from '@floating-ui/vue';
 import type { FloatingElement, Placement, Strategy } from '@floating-ui/vue';
 
-import { computed, type CSSProperties, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import {
+  computed,
+  type CSSProperties,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  type Ref,
+  type ComputedRef,
+  ref,
+  watch,
+} from 'vue';
 
+/**
+ * Configuration options for the `useSbFloatingPanel` composable.
+ */
 interface FloatingSettings {
+  /**
+   * Defines the preferred placement of the floating element relative to the reference.
+   * Example: 'top', 'bottom-start', 'right-end', etc.
+   */
   placement: Placement;
+
+  /**
+   * Determines the positioning strategy for the floating element.
+   * Can be either 'absolute' or 'fixed'.
+   */
   strategy: Strategy;
+
+  /**
+   * Specifies the distance (in pixels) between the reference and floating elements.
+   */
   offsetValue: number;
+
+  /**
+   * Enables the use of a directional arrow pointing from the floating element to the reference.
+   */
   hasArrow?: boolean;
+
+  /**
+   * When enabled, synchronizes the width of the floating element to match the reference element.
+   * Useful for dropdowns or inputs.
+   */
   hasResize?: boolean;
 }
 
-export function useSbFloatingPanel(settings: FloatingSettings) {
+/**
+ * `useSbFloatingPanel` is a composable that wraps Floating UI logic to manage
+ * floating elements with optional arrow and dynamic width support.
+ *
+ * It provides bindings and style objects ready to apply to your `ref` elements in Vue templates.
+ *
+ * @param settings - Configuration options for placement, offset, and behavior.
+ * @returns Bindings and utility functions to control the floating panel.
+ *
+ * @example
+ * ```ts
+ * const {
+ *   reference,
+ *   floating,
+ *   floatingArrow,
+ *   floatingPlacement,
+ *   floatingStyle,
+ *   floatingArrowStyle,
+ *   isOpen,
+ *   toggle,
+ *   open,
+ *   close
+ * } = useSbFloatingPanel({
+ *   placement: 'bottom',
+ *   strategy: 'absolute',
+ *   offsetValue: 10,
+ *   hasArrow: true,
+ *   hasResize: false
+ * });
+ * ```
+ *
+ * @example
+ * ```html
+ * <div ref="reference">Anchor</div>
+ * <div ref="floating" v-if="isOpen">Panel</div>
+ * <div ref="floatingArrow" v-if="isOpen">Arrow</div>
+ * ```
+ */
+export function useSbFloatingPanel(settings: FloatingSettings): {
+  reference: Ref<HTMLElement | null>;
+  floating: Ref<FloatingElement | null>;
+  floatingArrow: Ref<HTMLElement | null>;
+  floatingPlacement: Ref<Placement>;
+  floatingStyle: ComputedRef<CSSProperties>;
+  floatingArrowStyle: ComputedRef<CSSProperties>;
+  isOpen: Ref<boolean>;
+  toggle: () => void;
+  open: () => void;
+  close: () => void;
+} {
   const reference = ref<HTMLElement | null>(null);
   const floating = ref<FloatingElement | null>(null);
   const floatingArrow = ref<HTMLElement | null>(null);
@@ -31,6 +115,10 @@ export function useSbFloatingPanel(settings: FloatingSettings) {
   const changeFloatingVisibility = (newState: boolean): void => {
     isOpen.value = newState;
   };
+
+  const open = () => changeFloatingVisibility(true);
+  const close = () => changeFloatingVisibility(false);
+  const toggle = () => changeFloatingVisibility(!isOpen.value);
 
   const syncPopperWidthWithAnchor = (): void => {
     if (floating.value && reference.value) {
@@ -114,6 +202,8 @@ export function useSbFloatingPanel(settings: FloatingSettings) {
     floatingStyle,
     floatingArrowStyle,
     isOpen,
-    changeFloatingVisibility,
+    toggle,
+    open,
+    close,
   };
 }
