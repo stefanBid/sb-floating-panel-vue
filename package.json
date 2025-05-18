@@ -20,7 +20,10 @@
     "composable",
     "vue-library"
   ],
-  "author": "Stefano Biddau",
+  "author": {
+    "name": "Stefano Biddau",
+    "url": "https://www.stefano-biddau.com"
+  },
   "license": "MIT",
     "repository": {
     "type": "git",
