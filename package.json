@@ -1,7 +1,35 @@
 {
   "name": "sb-floating-panel-vue",
   "version": "1.0.0",
-  "description": "A lightweight Vue 3 composable hook built on top of @floating-ui/vue to manage floating panels with arrow and resize support.",
+  "description": "A flexible and lightweight Vue 3 floating panel system powered by @floating-ui/vue — includes composable hooks and plug-and-play components with arrow and resize support.",
+  "keywords": [
+    "vue",
+    "vue3",
+    "floating-ui",
+    "floating panel",
+    "tooltip",
+    "popover",
+    "dropdown",
+    "floating",
+    "positioning",
+    "arrow",
+    "teleport",
+    "resize",
+    "resize-observer",
+    "vue-components",
+    "composable",
+    "vue-library"
+  ],
+  "author": "Stefano Biddau",
+  "license": "MIT",
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/stefanBid/sb-floating-panel-vue"
+  },
+  "bugs": {
+    "url": "https://github.com/stefanBid/sb-floating-panel-vue/issues"
+  },
+  "homepage": "https://github.com/stefanBid/sb-floating-panel-vue#readme",
   "main": "dist/sb-floating-panel.umd.js",
   "module": "dist/sb-floating-panel.es.js",
   "types": "dist/index.d.ts",
@@ -30,23 +58,6 @@
     "lint": "eslint . --ext .ts",
     "check": "vue-tsc --noEmit"
   },
-  "keywords": [
-    "vue",
-    "floating-ui",
-    "hook",
-    "composable",
-    "floating panel"
-  ],
-  "author": "Stefano Biddau",
-  "license": "MIT",
-    "repository": {
-    "type": "git",
-    "url": "https://github.com/stefanBid/sb-floating-panel-vue"
-  },
-  "bugs": {
-    "url": "https://github.com/stefanBid/sb-floating-panel-vue/issues"
-  },
-  "homepage": "https://github.com/stefanBid/sb-floating-panel-vue#readme",
   "peerDependencies": {
     "vue": "^3.5.13"
   },
