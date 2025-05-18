@@ -17,6 +17,6 @@
     "types": ["vite/client", "node"], // For Vite-aware projects
     "resolveJsonModule": true
   },
-  "include": ["src", "src/index.ts"],
+  "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

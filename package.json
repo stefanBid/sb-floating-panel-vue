@@ -1,6 +1,6 @@
 {
   "name": "sb-floating-panel-vue",
-  "version": "0.1.6",
+  "version": "1.0.0",
   "description": "A lightweight Vue 3 composable hook built on top of @floating-ui/vue to manage floating panels with arrow and resize support.",
   "main": "dist/sb-floating-panel.umd.js",
   "module": "dist/sb-floating-panel.es.js",
@@ -10,11 +10,20 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/sb-floating-panel.es.js",
       "require": "./dist/sb-floating-panel.umd.js"
+    },
+    "./style.css": {
+      "default": "./dist/sb-floating-panel-vue.css"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": ["dist/index.d.ts"]
     }
   },
   "files": [
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -30,6 +39,14 @@
   ],
   "author": "Stefano Biddau",
   "license": "MIT",
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/stefanBid/sb-floating-panel-vue"
+  },
+  "bugs": {
+    "url": "https://github.com/stefanBid/sb-floating-panel-vue/issues"
+  },
+  "homepage": "https://github.com/stefanBid/sb-floating-panel-vue#readme",
   "peerDependencies": {
     "vue": "^3.5.13"
   },
@@ -37,13 +54,14 @@
     "@floating-ui/vue": "^1.1.6"
   },
   "devDependencies": {
-    "@types/node": "^22.15.17",
-    "@typescript-eslint/eslint-plugin": "^8.32.0",
-    "@typescript-eslint/parser": "^8.32.0",
+    "@types/node": "^22.15.18",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
     "@vitejs/plugin-vue": "^5.2.4",
     "eslint": "^9.26.0",
     "eslint-plugin-prettier": "^5.4.0",
     "eslint-plugin-vue": "^10.1.0",
+    "vue-eslint-parser": "10.1.3",
     "prettier": "^3.5.3",
     "typescript": "~5.7.2",
     "vite": "^6.3.5",
