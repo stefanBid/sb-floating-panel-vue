@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v2.0.0...v2.0.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* set explicit rootDir in tsconfig for TypeScript 6 ([#13](https://github.com/stefanBid/sb-floating-panel-vue/issues/13)) ([5bf700b](https://github.com/stefanBid/sb-floating-panel-vue/commit/5bf700b1f2a9825abdecae01bf90b6333eea9ac4))
+
 ## [2.0.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v1.0.0...v2.0.0) (2026-10-18)
 
 
