@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "i18n": {
+    "enabled": false,
+    "source": "user",
+    "updatedAt": "2026-10-18"
+  },
+  "naming": {
+    "componentPrefix": "Sb",
+    "source": "user",
+    "updatedAt": "2026-10-18"
+  },
+  "icons": {
+    "module": null,
+    "source": "user",
+    "updatedAt": "2026-10-18"
+  }
+}
