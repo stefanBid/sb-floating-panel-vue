@@ -6,6 +6,7 @@
     "lib": ["DOM", "ESNext"], // Support browser and latest JS
     "declaration": true, // Generate .d.ts files
     "outDir": "dist", // Where compiled files go
+    "rootDir": "./src", // Required by TS 6 when emitting (outDir/declaration)
     "strict": true, // Enable all strict type checks
     "noUnusedLocals": true,
     "noUnusedParameters": true,
