@@ -225,6 +225,20 @@ Due to `<teleport>` in `<SbFloating>`, if you apply custom directives directly t
 
 ---
 
+## 🛠️ Development
+
+```bash
+npm install
+npm run dev     # playground at http://localhost:5173 (playground/App.vue)
+npm run lint    # ESLint
+npm run check   # type check of src/ and playground/
+npm run build   # library build in dist/
+```
+
+The playground imports the components from `src/`, so changes reload instantly. It is not part of the published package.
+
+---
+
 ## 📄 License
 
 [MIT License](https://github.com/stefanBid/sb-floating-panel-vue/blob/main/LICENSE) © [Stefano Biddau](https://www.stefano-biddau.com/)
