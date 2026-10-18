@@ -1,6 +1,6 @@
 {
   "name": "sb-floating-panel-vue",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A flexible and lightweight Vue 3 floating panel system powered by @floating-ui/vue — includes composable hooks and plug-and-play components with arrow and resize support.",
   "keywords": [
     "vue",
@@ -25,7 +25,7 @@
     "url": "https://www.stefano-biddau.com"
   },
   "license": "MIT",
-    "repository": {
+  "repository": {
     "type": "git",
     "url": "https://github.com/stefanBid/sb-floating-panel-vue"
   },
@@ -48,38 +48,46 @@
   },
   "typesVersions": {
     "*": {
-      "*": ["dist/index.d.ts"]
+      "*": [
+        "dist/index.d.ts"
+      ]
     }
   },
   "files": [
     "dist"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "engines": {
+    "node": ">=24.19.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint .",
     "check": "vue-tsc --noEmit"
   },
   "peerDependencies": {
+    "@floating-ui/vue": "^2.0.1",
     "vue": "^3.5.13"
   },
-  "dependencies": {
-    "@floating-ui/vue": "^1.1.6"
-  },
   "devDependencies": {
-    "@types/node": "^22.15.18",
-    "@typescript-eslint/eslint-plugin": "^8.32.1",
-    "@typescript-eslint/parser": "^8.32.1",
-    "@vitejs/plugin-vue": "^5.2.4",
-    "eslint": "^9.26.0",
-    "eslint-plugin-prettier": "^5.4.0",
-    "eslint-plugin-vue": "^10.1.0",
-    "vue-eslint-parser": "10.1.3",
-    "prettier": "^3.5.3",
-    "typescript": "~5.7.2",
-    "vite": "^6.3.5",
-    "vite-plugin-dts": "^4.5.3",
-    "vue-tsc": "^2.2.10"
+    "@floating-ui/vue": "^2.0.1",
+    "@types/node": "^26.6.5",
+    "@typescript-eslint/eslint-plugin": "^8.71.2",
+    "@typescript-eslint/parser": "^8.71.2",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/language-core": "^3.3.13",
+    "eslint": "^10.13.0",
+    "eslint-plugin-prettier": "^5.5.7",
+    "eslint-plugin-vue": "^10.11.1",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.4",
+    "vite-plugin-dts": "^5.1.2",
+    "vue": "^3.5.44",
+    "vue-eslint-parser": "10.4.1",
+    "vue-tsc": "^3.3.13"
   }
 }

@@ -1,24 +1,25 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import dts from 'vite-plugin-dts';
-import { resolve } from 'path';
+import { resolve } from 'node:path';
 
 export default defineConfig({
   plugins: [
     vue(),
     dts({
-      outDir: 'dist',
+      outDirs: 'dist',
       insertTypesEntry: true,
+      processor: 'vue',
     }),
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
+      entry: resolve(import.meta.dirname, 'src/index.ts'),
       name: 'SbFloatingPanelVue',
       fileName: (format) => `sb-floating-panel.${format}.js`,
       formats: ['es', 'umd'],
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: ['vue', '@floating-ui/vue'],
       output: {
         globals: {

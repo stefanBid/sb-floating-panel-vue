@@ -4,7 +4,7 @@ const vuePlugin = require('eslint-plugin-vue')
 const vueParser = require('vue-eslint-parser')
 const prettierPlugin = require('eslint-plugin-prettier')
 
-/** @type {import("eslint").Linter.FlatConfig[]} */
+/** @type {import("eslint").Linter.Config[]} */
 module.exports = [
   // Ignore generated and dependency folders
   {
@@ -13,7 +13,7 @@ module.exports = [
 
   // TypeScript support
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.mts'],
     languageOptions: {
       parser: tsParser,
       parserOptions: {

@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "detectedAt": "2026-10-18",
+  "confirmed": [
+    "kind"
+  ],
+  "adapter": "vue-vite",
+  "framework": {
+    "name": "vue",
+    "major": 3
+  },
+  "bundler": {
+    "name": "vite",
+    "major": 6
+  },
+  "kind": "library",
+  "rendering": null,
+  "language": "ts",
+  "packageManager": "npm",
+  "templates": "vue-sfc",
+  "paths": {
+    "src": "src",
+    "styles": "src/assets/css",
+    "components": "src/components",
+    "composables": "src/composables",
+    "pages": null,
+    "layouts": null,
+    "public": "public"
+  },
+  "entries": {
+    "config": "vite.config.ts",
+    "app": null,
+    "lib": "src/index.ts",
+    "css": null
+  },
+  "styling": {
+    "engine": null,
+    "colorMode": null,
+    "fonts": null
+  },
+  "features": {
+    "router": null,
+    "autoImport": false,
+    "i18n": null,
+    "icons": null,
+    "images": null,
+    "state": null,
+    "test": null,
+    "lint": "eslint",
+    "typecheck": "vue-tsc"
+  },
+  "library": {
+    "name": "sb-floating-panel-vue",
+    "formats": [
+      "es",
+      "umd"
+    ],
+    "types": true,
+    "peers": [
+      "vue"
+    ]
+  }
+}

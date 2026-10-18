@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ESNext", // Support latest JS features
     "module": "ESNext", // Use ES modules
-    "moduleResolution": "Node", // For resolving imports like Node
+    "moduleResolution": "bundler", // Resolve imports the way Vite does
     "lib": ["DOM", "ESNext"], // Support browser and latest JS
     "declaration": true, // Generate .d.ts files
     "outDir": "dist", // Where compiled files go

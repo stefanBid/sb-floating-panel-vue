@@ -30,14 +30,16 @@ Created with ❤️ by [Stefano Biddau](https://www.stefano-biddau.com/)
 
 ```bash
 # npm
-npm install sb-floating-panel-vue
+npm install sb-floating-panel-vue @floating-ui/vue
 
 # yarn
-yarn add sb-floating-panel-vue
+yarn add sb-floating-panel-vue @floating-ui/vue
 
 # pnpm
-pnpm add sb-floating-panel-vue
+pnpm add sb-floating-panel-vue @floating-ui/vue
 ```
+
+`vue` (`^3.5.13`) and `@floating-ui/vue` (`^2.0.1`) are peer dependencies: your app provides them, so only one copy of each ends up in the bundle.
 
 ---
 
