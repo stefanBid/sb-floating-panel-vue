@@ -1,6 +1,6 @@
 {
   "name": "sb-floating-panel-vue",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A flexible and lightweight Vue 3 floating panel system powered by @floating-ui/vue — includes composable hooks and plug-and-play components with arrow and resize support.",
   "keywords": [
     "vue",
