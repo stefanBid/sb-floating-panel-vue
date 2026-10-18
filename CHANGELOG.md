@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-10-18
+
+### Changed
+
+- **BREAKING:** `@floating-ui/vue` is now a peer dependency (`^2.0.1`) instead of a dependency. Install it in your app next to `sb-floating-panel-vue`.
+- **BREAKING:** requires `@floating-ui/vue` 2, which drops `vue-demi` and needs Vue `>=3.3` (the library already requires Vue `^3.5.13`).
+- **BREAKING:** the build targets Vite 8's default browsers (Chrome/Edge 111, Firefox 114, Safari 16.4).
+- `sideEffects` now lists `**/*.css`, so bundlers keep `import 'sb-floating-panel-vue/style.css'`.
+- Toolchain upgraded: Vite 8 (Rolldown), `@vitejs/plugin-vue` 6, `vite-plugin-dts` 5, TypeScript 6, `vue-tsc` 3, ESLint 10.
+
+### Fixed
+
+- The stylesheet could be dropped by bundlers because `sideEffects` was `false`.
+
+---
+
 ## [1.0.0] - 2025-05-15
 
 ### Added

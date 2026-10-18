@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "notes": [
+    {
+      "id": "typescript@7.0.2",
+      "package": "typescript",
+      "current": "6.0.3",
+      "target": "7.0.2",
+      "status": "deferred",
+      "summary": "TypeScript 7 (native Go port) is not supported by typescript-eslint: @typescript-eslint/parser and eslint-plugin 8.71.2 declare peer typescript >=4.8.4 <6.1.0. vue-tsc and vite-plugin-dts also rely on the TS JS API, not verified on 7. Project kept on ~6.0.3 (all TS 6 deprecations already resolved).",
+      "blockedBy": [
+        {
+          "package": "@typescript-eslint/parser",
+          "range": "8.71.2",
+          "owner": "upstream"
+        },
+        {
+          "package": "@typescript-eslint/eslint-plugin",
+          "range": "8.71.2",
+          "owner": "upstream"
+        }
+      ],
+      "recheck": "does @typescript-eslint/parser@latest accept typescript 7 in its peers? (npm view @typescript-eslint/parser peerDependencies) and is typescript-eslint issue #10940 closed?",
+      "links": [
+        "https://github.com/typescript-eslint/typescript-eslint/issues/10940"
+      ],
+      "firstSeen": "2026-10-18",
+      "lastChecked": "2026-10-18",
+      "history": [
+        {
+          "date": "2026-10-18",
+          "text": "Constraint set to ^6.0.3 by the maintainer. typescript-eslint 8.71.2 still accepts only <6.1.0: when TS 6.1 ships, ^6.0.3 will pick it up and npm may report a peer conflict until typescript-eslint widens its range."
+        }
+      ]
+    },
+    {
+      "id": "@floating-ui/vue@2.0.1",
+      "package": "@floating-ui/vue",
+      "current": "2.0.1",
+      "target": "2.0.1",
+      "status": "resolved",
+      "summary": "Upgraded to 2.0.1 (dependencies ^2.0.1). v2 declares vue >=3.3.0 as a peer, so lib-check L6 suggests moving @floating-ui/vue from dependencies to peerDependencies (+ devDependencies) to avoid two copies in the app. Moving it is a breaking change for users of the library (major release): decision left to the maintainer.",
+      "blockedBy": [
+        {
+          "package": "sb-floating-panel-vue",
+          "range": "1.0.0",
+          "owner": "project"
+        }
+      ],
+      "recheck": "has the maintainer decided dependencies vs peerDependencies for @floating-ui/vue? (lib-check L6 still reported by /sb-health:build?)",
+      "links": [],
+      "firstSeen": "2026-10-18",
+      "lastChecked": "2026-10-18",
+      "history": [
+        {
+          "date": "2026-10-18",
+          "text": "Moved to peerDependencies ^2.0.1 (+ devDependencies) in the 2.0.0 breaking release; lib-check L6 cleared."
+        }
+      ],
+      "resolvedAt": "2026-10-18",
+      "resolution": "Moved to peerDependencies ^2.0.1 (+ devDependencies) in the 2.0.0 breaking release; lib-check L6 cleared."
+    }
+  ]
+}
