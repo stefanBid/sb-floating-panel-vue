@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v1.0.0...v2.0.0) (2026-10-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* require @floating-ui/vue 2, which drops vue-demi and needs Vue >=3.3
+* require Node.js >=24.19.0
+* target Vite 8 default browsers (Chrome/Edge 111, Firefox 114, Safari 16.4)
+* make @floating-ui/vue a peer dependency (^2.0.1): install it in your app next to sb-floating-panel-vue
+
+### Features
+
+* make @floating-ui/vue a peer dependency (^2.0.1): install it in your app next to sb-floating-panel-vue ([b3ff03e](https://github.com/stefanBid/sb-floating-panel-vue/commit/b3ff03e05b925afd326ab15546b2924d4d6dec22))
+* require @floating-ui/vue 2, which drops vue-demi and needs Vue &gt;=3.3 ([b3ff03e](https://github.com/stefanBid/sb-floating-panel-vue/commit/b3ff03e05b925afd326ab15546b2924d4d6dec22))
+* require Node.js &gt;=24.19.0 ([b3ff03e](https://github.com/stefanBid/sb-floating-panel-vue/commit/b3ff03e05b925afd326ab15546b2924d4d6dec22))
+* target Vite 8 default browsers (Chrome/Edge 111, Firefox 114, Safari 16.4) ([b3ff03e](https://github.com/stefanBid/sb-floating-panel-vue/commit/b3ff03e05b925afd326ab15546b2924d4d6dec22))
+
+
+### Bug Fixes
+
+* keep the stylesheet import when bundling (sideEffects lists **/*.css) ([b3ff03e](https://github.com/stefanBid/sb-floating-panel-vue/commit/b3ff03e05b925afd326ab15546b2924d4d6dec22))
+
 ## [1.0.0] - 2025-05-15
 
 ### Added
@@ -47,4 +69,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - N/A
 
 ---
-
