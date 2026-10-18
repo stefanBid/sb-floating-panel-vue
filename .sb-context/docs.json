@@ -1,0 +1,218 @@
+{
+  "schema": 1,
+  "updatedAt": "2026-10-18",
+  "links": [
+    {
+      "url": "https://vuejs.org/api/sfc-script-setup.html",
+      "title": "<script setup>",
+      "topic": "script-setup",
+      "package": "vue",
+      "version": "3",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [
+        "sb-design:extract-ui"
+      ],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vuejs.org/guide/essentials/reactivity-fundamentals.html",
+      "title": "Reactivity fundamentals",
+      "topic": "reactivity",
+      "package": "vue",
+      "version": "3",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vuejs.org/guide/extras/composition-api-faq.html",
+      "title": "Composition API FAQ",
+      "topic": "composition-api",
+      "package": "vue",
+      "version": "3",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vuejs.org/guide/components/props.html",
+      "title": "Props",
+      "topic": "props",
+      "package": "vue",
+      "version": "3",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [
+        "sb-design:extract-ui"
+      ],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vuejs.org/guide/components/slots.html",
+      "title": "Slots",
+      "topic": "slots",
+      "package": "vue",
+      "version": "3",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [
+        "sb-design:extract-ui"
+      ],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vuejs.org/guide/reusability/composables.html",
+      "title": "Composables",
+      "topic": "composables",
+      "package": "vue",
+      "version": "3",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vuejs.org/guide/typescript/composition-api.html",
+      "title": "TypeScript with the Composition API",
+      "topic": "typescript",
+      "package": "vue",
+      "version": "3",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vuejs.org/api/",
+      "title": "API reference",
+      "topic": "api",
+      "package": "vue",
+      "version": "3",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vite.dev/config/",
+      "title": "Configuring Vite",
+      "topic": "config",
+      "package": "vite",
+      "version": "8",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [
+        "sb-design:align"
+      ],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vite.dev/guide/build.html#library-mode",
+      "title": "Library mode",
+      "topic": "library-mode",
+      "package": "vite",
+      "version": "8",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [
+        "sb-health:build"
+      ],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vite.dev/guide/features.html",
+      "title": "Features (CSS, assets, TypeScript)",
+      "topic": "features",
+      "package": "vite",
+      "version": "8",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vite.dev/guide/env-and-mode.html",
+      "title": "Env variables and modes",
+      "topic": "env",
+      "package": "vite",
+      "version": "8",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vite.dev/guide/migration.html",
+      "title": "Migration from the previous major",
+      "topic": "upgrade",
+      "package": "vite",
+      "version": "8",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [
+        "sb-health:deps"
+      ],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://floating-ui.com/docs/vue",
+      "title": "Vue: useFloating",
+      "topic": "vue",
+      "package": "@floating-ui/vue",
+      "version": "2",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://floating-ui.com/docs/middleware",
+      "title": "Middleware",
+      "topic": "middleware",
+      "package": "@floating-ui/vue",
+      "version": "2",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://floating-ui.com/docs/autoUpdate",
+      "title": "autoUpdate",
+      "topic": "auto-update",
+      "package": "@floating-ui/vue",
+      "version": "2",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://floating-ui.com/docs/arrow",
+      "title": "Arrow",
+      "topic": "arrow",
+      "package": "@floating-ui/vue",
+      "version": "2",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://github.com/qmhc/unplugin-dts#readme",
+      "title": "Options",
+      "topic": "readme",
+      "package": "vite-plugin-dts",
+      "version": "5",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [
+        "sb-health:build"
+      ],
+      "verifiedAt": null
+    }
+  ]
+}
