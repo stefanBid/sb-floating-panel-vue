@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, useAttrs, useId, watchEffect } from 'vue';
-import { useSbFloatingContext } from '../context';
+import { POPUP_ROLES, useSbFloatingContext } from '../context';
 import { getTabbables } from '../focus';
 import type { SbReferenceProps } from '../types';
 
@@ -30,17 +30,12 @@ onBeforeUnmount(() => {
   if (context.referenceId.value === id.value) context.referenceId.value = undefined;
 });
 
-const POPUP_ROLES: Record<string, NonNullable<SbReferenceProps['ariaHaspopup']>> = {
-  dialog: 'dialog',
-  alertdialog: 'dialog',
-  menu: 'menu',
-  listbox: 'listbox',
-  tree: 'tree',
-  grid: 'grid',
-};
-
 const ariaHaspopup = computed(
-  () => props.ariaHaspopup ?? (floatingRole.value ? POPUP_ROLES[floatingRole.value] : undefined)
+  () =>
+    props.ariaHaspopup ??
+    (floatingRole.value && Object.hasOwn(POPUP_ROLES, floatingRole.value)
+      ? POPUP_ROLES[floatingRole.value]
+      : undefined)
 );
 
 const setReference = (el: unknown) => {

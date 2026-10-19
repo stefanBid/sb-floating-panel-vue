@@ -9,7 +9,7 @@ import {
   type CSSProperties,
   type TransitionProps,
 } from 'vue';
-import { useSbFloatingContext } from '../context';
+import { POPUP_ROLES, useSbFloatingContext } from '../context';
 import { FOCUS_GUARD_ATTRIBUTE, getNextTabbable, getTabbables } from '../focus';
 import type { SbFloatingProps } from '../types';
 
@@ -60,10 +60,13 @@ const wrapperStyle = computed<CSSProperties>(() => ({
   ...(props.zIndex !== undefined ? { zIndex: props.zIndex } : {}),
 }));
 
-// A panel with a role is named after the reference, unless the user names it:
+// A popup panel (dialog, menu, …) is named after the reference, unless the user names it:
 // their `aria-label` replaces the default, their `aria-labelledby` overrides it.
 const panelAttrs = () => ({
-  'aria-labelledby': props.role && attrs['aria-label'] == null ? referenceId.value : undefined,
+  'aria-labelledby':
+    props.role && Object.hasOwn(POPUP_ROLES, props.role) && attrs['aria-label'] == null
+      ? referenceId.value
+      : undefined,
   ...attrs,
 });
 

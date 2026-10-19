@@ -183,8 +183,9 @@ export interface SbFloatingProps {
   as?: string;
 
   /**
-   * ARIA role of the panel. With a role, the panel is named after the reference with
-   * `aria-labelledby`, unless you pass `aria-label` or `aria-labelledby` yourself.
+   * ARIA role of the panel. With a popup role (`dialog`, `alertdialog`, `menu`, `listbox`,
+   * `tree`, `grid`), the panel is named after the reference with `aria-labelledby`, unless
+   * you pass `aria-label` or `aria-labelledby` yourself.
    * `null` renders no role (disclosure pattern).
    * @default 'dialog'
    */

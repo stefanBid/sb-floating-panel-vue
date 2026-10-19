@@ -269,6 +269,12 @@ describe('SbFloating', () => {
     expect(panel()!.getAttribute('aria-label')).toBe('Account');
   });
 
+  it('names only popup roles after the reference', async () => {
+    mountPanel({ defaultOpen: true }, { floatingProps: { role: 'tooltip' } });
+    await nextTick();
+    expect(document.querySelector('[role="tooltip"]')!.hasAttribute('aria-labelledby')).toBe(false);
+  });
+
   it('keeps an aria-labelledby passed by the user', async () => {
     mountPanel({ defaultOpen: true }, { floatingProps: { 'aria-labelledby': 'title' } });
     await nextTick();
