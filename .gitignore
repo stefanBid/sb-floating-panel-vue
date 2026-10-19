@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # Test coverage
 coverage/
+
+# Impeccable design critiques (local)
+.impeccable/
