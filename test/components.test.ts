@@ -530,6 +530,19 @@ describe('SbContainer', () => {
     expect(panel()).toBeNull();
   });
 
+  it('uses defaultOpen only as the initial state', async () => {
+    const wrapper = mountPanel({ defaultOpen: true });
+    await wrapper.setProps({ disabled: true });
+    expect(panel()).toBeNull();
+    await wrapper.setProps({ disabled: false });
+    expect(panel()).toBeNull();
+    wrapper.unmount();
+
+    const closed = mountPanel({ defaultOpen: false });
+    await closed.setProps({ defaultOpen: true });
+    expect(panel()).toBeNull();
+  });
+
   it('opens only programmatically with the manual trigger', async () => {
     const wrapper = mountPanel(
       { trigger: 'manual' },

@@ -41,7 +41,9 @@ defineSlots<{
   default?: (props: SbContainerSlotProps) => unknown;
 }>();
 
-const isOpen = computed(() => !props.disabled && (model.value ?? props.defaultOpen));
+// Read once: `defaultOpen` is only the initial state
+const defaultOpen = props.defaultOpen;
+const isOpen = computed(() => !props.disabled && (model.value ?? defaultOpen));
 
 const setOpen = (value: boolean) => {
   if (value && props.disabled) return;
@@ -167,7 +169,8 @@ watch(isOpen, (value) => (value ? emit('open') : emit('close')));
 watch(
   () => props.disabled,
   (disabled) => {
-    if (disabled && model.value) model.value = false;
+    // Also when open only through `defaultOpen`, so it does not reopen once enabled again
+    if (disabled && (model.value ?? defaultOpen)) model.value = false;
   }
 );
 
