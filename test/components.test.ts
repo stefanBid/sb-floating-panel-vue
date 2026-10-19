@@ -345,6 +345,81 @@ describe('SbContainer', () => {
     outside.remove();
   });
 
+  it('waits for the click of a tap before closing on touch', async () => {
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    mountPanel({ defaultOpen: true });
+    await nextTick();
+    const touch = () =>
+      outside.dispatchEvent(
+        new PointerEvent('pointerdown', { bubbles: true, composed: true, pointerType: 'touch' })
+      );
+
+    // A touch that becomes a scroll fires no click
+    touch();
+    await nextTick();
+    expect(panel()).not.toBeNull();
+
+    touch();
+    outside.click();
+    await nextTick();
+    expect(panel()).toBeNull();
+    outside.remove();
+  });
+
+  it('leaves Escape to widgets that handle it and to IME composition', async () => {
+    mountPanel({ defaultOpen: true });
+    await nextTick();
+    const inside = document.querySelector('.inside')!;
+    inside.addEventListener('keydown', (event) => event.preventDefault(), { once: true });
+
+    await keydown(inside, 'Escape');
+    expect(panel()).not.toBeNull();
+    await keydown(document, 'Escape', { isComposing: true });
+    expect(panel()).not.toBeNull();
+
+    const event = await keydown(document, 'Escape');
+    expect(event.defaultPrevented).toBe(true);
+    expect(panel()).toBeNull();
+  });
+
+  it('closes the most recently opened of two sibling containers on Escape', async () => {
+    const first = mountPanel({ defaultOpen: true }, { floatingProps: { class: 'first' } });
+    const second = mountPanel({ defaultOpen: true }, { floatingProps: { class: 'second' } });
+    await nextTick();
+
+    await keydown(document, 'Escape');
+    expect(document.querySelector('.second')).toBeNull();
+    expect(document.querySelector('.first')).not.toBeNull();
+    first.unmount();
+    second.unmount();
+  });
+
+  it('gives focus back without scrolling, unless an outside press focuses something else', async () => {
+    const field = document.createElement('input');
+    const text = document.createElement('p');
+    document.body.append(field, text);
+    mountPanel({}, { floatingProps: { autoFocus: false } });
+    const focus = vi.spyOn(trigger(), 'focus');
+
+    // Pressing plain text: focus would be lost, so it goes back to the trigger
+    await click(trigger());
+    (document.querySelector('.inside') as HTMLElement).focus();
+    await click(text);
+    expect(panel()).toBeNull();
+    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
+
+    // Pressing a field: the browser focuses it, the trigger is left alone
+    focus.mockClear();
+    await click(trigger());
+    (document.querySelector('.inside') as HTMLElement).focus();
+    await click(field);
+    expect(panel()).toBeNull();
+    expect(focus).not.toHaveBeenCalled();
+    field.remove();
+    text.remove();
+  });
+
   it('closes when focus moves outside unless closeOnFocusOut is false', async () => {
     const outside = document.createElement('button');
     document.body.appendChild(outside);

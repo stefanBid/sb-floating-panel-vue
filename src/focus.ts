@@ -20,6 +20,12 @@ const isTabbable = (el: HTMLElement) =>
   !el.closest('[inert]') &&
   (el.checkVisibility?.() ?? true);
 
+/** Whether pressing `target` moves focus to it (or to a focusable ancestor). */
+export function isFocusable(target: EventTarget | null): boolean {
+  const el = target instanceof Element ? target.closest<HTMLElement>(FOCUSABLE) : null;
+  return !!el && !el.closest('[inert]');
+}
+
 /** Elements reachable with Tab inside `root`, in document order (focus guards excluded). */
 export function getTabbables(root: ParentNode): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(isTabbable);

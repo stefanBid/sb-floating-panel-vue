@@ -112,13 +112,17 @@ const focusPanel = () => {
 };
 
 watch(isOpen, (value) => {
+  const skipFocusReturn = context.skipFocusReturn;
+  context.skipFocusReturn = false;
   if (value) {
     isMounted.value = true;
     return;
   }
   // Runs before the panel is removed: give focus back to the trigger if it was inside
   const active = document.activeElement;
-  if (active && context.floating.value?.contains(active)) context.reference.value?.focus();
+  if (!skipFocusReturn && active && context.floating.value?.contains(active)) {
+    context.reference.value?.focus({ preventScroll: true });
+  }
 });
 
 // Focus only after the first position is computed, so the page does not scroll to (0, 0)

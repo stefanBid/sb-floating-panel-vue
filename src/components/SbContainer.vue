@@ -1,11 +1,13 @@
 <script lang="ts">
-const handledEscapes = new WeakSet<Event>();
+// Open containers, most recent last: Escape closes only the last one
+const openStack: SbFloatingContext[] = [];
 </script>
 
 <script setup lang="ts">
 import { computed, inject, onScopeDispose, provide, ref, toRef, useId, watch } from 'vue';
 import { useSbFloatingPanel } from '../composables/useSbFloatingPanel';
 import { sbFloatingContextKey, type SbFloatingContext } from '../context';
+import { isFocusable } from '../focus';
 import type { SbContainerExposed, SbContainerProps, SbContainerSlotProps } from '../types';
 
 defineOptions({ inheritAttrs: false });
@@ -70,6 +72,7 @@ const context: SbFloatingContext = {
   referenceId: ref<string | undefined>(),
   // Same default as the `role` prop of SbFloating, for the render before it is set up
   floatingRole: ref<string | null>('dialog'),
+  skipFocusReturn: false,
   open,
   close,
   toggle,
@@ -80,7 +83,6 @@ const context: SbFloatingContext = {
     }
     return [...children].some((child) => child.contains(target));
   },
-  hasOpenChild: () => [...children].some((child) => child.isOpen.value || child.hasOpenChild()),
   registerChild: (child) => {
     children.add(child);
     return () => children.delete(child);
@@ -88,23 +90,50 @@ const context: SbFloatingContext = {
 };
 
 // A container nested inside another one (e.g. a submenu in a panel) is treated as part of it:
-// clicks inside it are not "outside" for the parent, and Escape closes the innermost first.
+// clicks inside it are not "outside" for the parent. Escape closes the innermost first
+// because it opened last.
 const parent = inject(sbFloatingContextKey, null);
 if (parent) onScopeDispose(parent.registerChild(context));
 
 provide(sbFloatingContextKey, context);
 
 const onKeydown = (event: KeyboardEvent) => {
-  if (event.key !== 'Escape' || !props.closeOnEscape || context.hasOpenChild()) return;
-  // Every open container listens on document: only the innermost one handles the event
-  if (handledEscapes.has(event)) return;
-  handledEscapes.add(event);
+  if (event.key !== 'Escape' || openStack[openStack.length - 1] !== context) return;
+  // Already handled by a widget inside (e.g. a combobox), or ending an IME composition
+  if (!props.closeOnEscape || event.defaultPrevented || event.isComposing) return;
+  // Stops a surrounding native <dialog> from closing too
+  event.preventDefault();
   close();
 };
 
+const closeOutside = (target: EventTarget | null) => {
+  if (context.contains(target)) return;
+  // The browser is about to focus what was pressed: leave focus there
+  context.skipFocusReturn = isFocusable(target);
+  close();
+};
+
+let cancelTouchClick: (() => void) | undefined;
+
 const onPointerdown = (event: PointerEvent) => {
+  cancelTouchClick?.();
   if (!props.closeOnClickOutside) return;
-  if (!context.contains(event.composedPath()[0] ?? event.target)) close();
+  const target = event.composedPath()[0] ?? event.target;
+  if (event.pointerType !== 'touch') {
+    closeOutside(target);
+    return;
+  }
+  // A touch may start a scroll: decide on the click of a tap, which a scroll never fires
+  if (context.contains(target)) return;
+  const onClick = (click: MouseEvent) => {
+    cancelTouchClick?.();
+    closeOutside(click.composedPath()[0] ?? click.target);
+  };
+  document.addEventListener('click', onClick, true);
+  cancelTouchClick = () => {
+    document.removeEventListener('click', onClick, true);
+    cancelTouchClick = undefined;
+  };
 };
 
 // A non-modal panel closes when keyboard focus moves on to the rest of the page
@@ -118,6 +147,7 @@ watch(
   isOpen,
   (value, _previous, onCleanup) => {
     if (!value || typeof document === 'undefined') return;
+    openStack.push(context);
     document.addEventListener('keydown', onKeydown);
     document.addEventListener('pointerdown', onPointerdown, true);
     document.addEventListener('focusin', onFocusin);
@@ -125,6 +155,8 @@ watch(
       document.removeEventListener('keydown', onKeydown);
       document.removeEventListener('pointerdown', onPointerdown, true);
       document.removeEventListener('focusin', onFocusin);
+      cancelTouchClick?.();
+      openStack.splice(openStack.indexOf(context), 1);
     });
   },
   { immediate: true }
