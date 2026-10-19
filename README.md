@@ -9,10 +9,10 @@
 
 ## 🔥 Features
 
-- 🧩 Three components (`SbContainer`, `SbReference`, `SbFloating`) for dropdowns, popovers, menus and tooltips
+- 🧩 Three components (`SbContainer`, `SbReference`, `SbFloating`) for dropdowns, popovers and disclosure panels
 - ⚡ Built on top of [`@floating-ui/vue`](https://floating-ui.com/): `offset`, `flip`, `shift`, `size` and `hide` already configured
 - 🎨 Zero CSS shipped: the library adapts to your design system (plain CSS, Tailwind, CSS modules)
-- ♿ Accessible by default: ARIA attributes, keyboard support, Escape, click outside, focus management
+- ♿ Accessible by default: ARIA attributes and naming, Tab order kept across the teleport, Escape, click outside, focus management
 - 🔁 Fully reactive props, `v-model:open`, nested panels
 
 ---
@@ -58,9 +58,10 @@ import { SbContainer, SbReference, SbFloating } from 'sb-floating-panel-vue';
 <template>
   <SbContainer placement="bottom-start" match-width="min">
     <template #default="{ close }">
-      <SbReference class="my-trigger" aria-haspopup="menu">Account</SbReference>
-      <SbFloating role="menu" transition="pop" class="my-panel">
-        <button type="button" role="menuitem" @click="close()">Sign out</button>
+      <SbReference class="my-trigger">Account</SbReference>
+      <SbFloating transition="pop" class="my-panel">
+        <a href="/profile">Profile</a>
+        <button type="button" @click="close()">Sign out</button>
       </SbFloating>
     </template>
   </SbContainer>
@@ -86,7 +87,8 @@ Holds the state and the positioning. Renders no element of its own, only its slo
 | `disabled`            | `boolean`                              | `false`          | Prevents opening; closes the panel if it is open                                             |
 | `trigger`             | `'click' \| 'manual'`                  | `'click'`        | `manual`: the reference does not toggle; open with `v-model:open`, slot props or methods    |
 | `closeOnEscape`       | `boolean`                              | `true`           | Closes on Escape                                                                             |
-| `closeOnClickOutside` | `boolean`                              | `true`           | Closes on a pointer press outside the reference and the panel                                |
+| `closeOnClickOutside` | `boolean`                              | `true`           | Closes on a pointer press outside the reference and the panel (on touch, on the tap's click) |
+| `closeOnFocusOut`     | `boolean`                              | `true`           | Closes when keyboard focus moves outside the reference and the panel                         |
 
 | Event         | Payload   | Description              |
 |---------------|-----------|--------------------------|
@@ -94,7 +96,7 @@ Holds the state and the positioning. Renders no element of its own, only its slo
 | `open`        | —         | The panel has opened     |
 | `close`       | —         | The panel has closed     |
 
-**Slot props**: `isOpen`, `open()`, `close()`, `toggle()`, `placement` (resolved after flip), `side`.
+**Slot props**: `isOpen`, `open()`, `close()`, `toggle()`, `placement` (resolved after flip), `side`, `align`.
 
 **Exposed methods** (template ref): `open()`, `close()`, `toggle()`, `update()` (recomputes the position).
 
@@ -102,12 +104,15 @@ Holds the state and the positioning. Renders no element of its own, only its slo
 
 The trigger the panel is anchored to.
 
-| Prop           | Type     | Default    | Description                                                                                                  |
-|----------------|----------|------------|--------------------------------------------------------------------------------------------------------------|
-| `as`           | `string` | `'button'` | Tag to render. `button` gets `type="button"`; tags other than `button`/`a` get `role="button"`, `tabindex="0"` and Enter/Space |
-| `ariaHaspopup` | `'dialog' \| 'menu' \| 'listbox' \| 'tree' \| 'grid' \| 'true' \| 'false'` | `'dialog'` | Value of `aria-haspopup`, matching the `role` of the panel |
+| Prop           | Type                  | Default        | Description                                                                                                  |
+|----------------|-----------------------|----------------|--------------------------------------------------------------------------------------------------------------|
+| `as`           | `string \| Component` | `'button'`     | Tag or component to render. `button` gets `type="button"`; `a` with `href` and components keep their own semantics; any other tag (also `a` without `href`) gets `role="button"`, `tabindex="0"` and Enter/Space |
+| `id`           | `string`              | generated      | `id` of the element, used to name the panel                                                                  |
+| `ariaHaspopup` | `'dialog' \| 'menu' \| 'listbox' \| 'tree' \| 'grid' \| 'true' \| 'false'` | follows `role` | Value of `aria-haspopup`. When unset it follows the `role` of the panel (`alertdialog` gives `dialog`) and is left out for other roles |
 
-Sets `aria-expanded`, `aria-controls` (while open) and `data-sbf-state`. When the container is `disabled`, a `button` gets `disabled`, other tags get `aria-disabled="true"` and `tabindex="-1"`. Your own `class`, attributes and listeners (`@click`, `@mouseenter`, …) are applied to the element; the click is not stopped.
+Sets `aria-expanded`, `aria-controls` (while open) and `data-sbf-state`. When the container is `disabled`, a `button` gets `disabled`, anything else gets `aria-disabled="true"` (and non-interactive tags `tabindex="-1"`). Your own `class`, attributes and listeners (`@click`, `@mouseenter`, …) are applied to the element; the click is not stopped.
+
+With a component (e.g. the `Button` of your design system), its root element becomes the reference, so the component must render a single root element that accepts the attributes and listeners above. While the panel is open, Tab on the reference moves focus into the panel.
 
 ### `<SbFloating>`
 
@@ -115,20 +120,20 @@ The panel, teleported to `body`. It is rendered while open and stays mounted unt
 
 | Prop               | Type                    | Default    | Description                                                                                         |
 |--------------------|-------------------------|------------|-----------------------------------------------------------------------------------------------------|
-| `as`               | `string`                | `'div'`    | Tag of the panel element                                                                            |
-| `role`             | `string`                | `'dialog'` | ARIA role of the panel                                                                              |
-| `transition`       | `string`                | —          | Name of a Vue `<Transition>` defined in your CSS. No animation when unset                           |
-| `teleportTo`       | `string \| HTMLElement` | `'body'`   | Teleport target                                                                                     |
-| `teleportDisabled` | `boolean`               | `false`    | Renders the panel in place                                                                          |
-| `zIndex`           | `number \| string`      | —          | `z-index` of the positioned wrapper                                                                 |
-| `autoFocus`        | `boolean`               | `false`    | Once positioned, focuses the first `[autofocus]` or focusable element inside, else the panel itself |
+| `as`               | `string`                     | `'div'`    | Tag of the panel element                                                                            |
+| `role`             | `string \| null`             | `'dialog'` | ARIA role of the panel; `null` renders no role (disclosure pattern)                                 |
+| `transition`       | `string \| TransitionProps`  | —          | Name of a Vue `<Transition>` defined in your CSS, or an object of `<Transition>` props (e.g. Tailwind classes). No animation when unset |
+| `teleportTo`       | `string \| HTMLElement`      | `'body'`   | Teleport target                                                                                     |
+| `teleportDisabled` | `boolean`                    | `false`    | Renders the panel in place                                                                          |
+| `zIndex`           | `number \| string`           | —          | `z-index` of the positioned wrapper. Use this, not a `z-*` class on the panel (see [Stacking](#stacking)) |
+| `autoFocus`        | `boolean`                    | `true`     | Once positioned, focuses the first `[autofocus]` or focusable element inside, else the panel itself. Set it to `false` for panels that must not take focus, such as tooltips |
 
 | Event         | Description                                                    |
 |---------------|----------------------------------------------------------------|
 | `after-enter` | The enter transition has finished                              |
 | `after-leave` | The leave transition has finished and the panel is removed     |
 
-When focus is inside the panel as it closes, it goes back to the reference.
+With a popup role (`dialog`, `alertdialog`, `menu`, `listbox`, `tree`, `grid`), the panel is named after the reference with `aria-labelledby`, unless you pass `aria-label` or `aria-labelledby` yourself. When focus is inside the panel as it closes, it goes back to the reference.
 
 ### Types
 
@@ -170,21 +175,21 @@ SbContainer ── provides the state ──┬─▶ SbReference
 An `SbContainer` placed inside another one (e.g. a submenu in a menu panel) registers with its parent:
 
 - a press inside the nested panel is not "outside" for the parent, so both stay open;
-- Escape closes the innermost open panel first, then the next one;
+- Escape closes the innermost open panel first, then the next one (more generally, the most recently opened panel, also between sibling containers);
 - a press outside all of them closes them all.
 
 ### From click to open panel
 
 1. **Click** on `SbReference` (or Enter/Space on a non-interactive tag). With `trigger="click"` and the container not `disabled`, the container toggles: it emits `update:open` and, without `v-model:open`, updates its own state.
-2. **Open state changes.** `SbReference` gets `aria-expanded="true"`, `aria-controls` and `data-sbf-state="open"`; the container starts listening for Escape and outside presses (only while open) and emits `open`.
-3. **The panel mounts.** `SbFloating` renders the wrapper in the teleport target and the panel inside it; the enter classes of your `transition`, if any, are applied to the panel.
+2. **Open state changes.** `SbReference` gets `aria-expanded="true"`, `aria-controls` and `data-sbf-state="open"`; the container starts listening for Escape, outside presses and focus moving outside (only while open) and emits `open`.
+3. **The panel mounts.** `SbFloating` renders the wrapper in the teleport target, with the panel and two hidden focus guards inside it; the enter classes of your `transition`, if any, are applied to the panel.
 4. **Positioning.** Floating UI starts tracking the reference (scroll, resize, layout changes) and computes the position with `offset`, `flip`, `shift`, `size` and, with `hideWhenDetached`, `hide`. `size` writes the `--sbf-*` variables and applies `matchWidth`; the position is written on the wrapper.
-5. **Positioned.** With `autoFocus`, focus moves inside the panel now, not earlier, so the page does not jump to the panel's initial (0, 0) position.
+5. **Positioned.** With `autoFocus` (the default), focus moves inside the panel now, not earlier, so the page does not jump to the panel's initial (0, 0) position.
 
-Closing (click on the reference, `close()`, Escape, press outside, `v-model:open` set to `false`, or `disabled`):
+Closing (click on the reference, `close()`, Escape, press outside, focus moving outside, `v-model:open` set to `false`, or `disabled`):
 
-1. If focus is inside the panel, it goes back to the reference; the container emits `close`.
-2. The leave classes of your `transition` are applied; the wrapper stays mounted and positioned until the animation ends (immediately without `transition`).
+1. If focus is inside the panel, it goes back to the reference without scrolling the page; it stays where it is when a press outside lands on another focusable element. The container emits `close`.
+2. The panel gets `data-sbf-state="closed"` and the leave classes of your `transition`; the wrapper stays mounted and positioned until the animation ends (immediately without `transition`).
 3. The wrapper is removed, Floating UI stops tracking, `SbFloating` emits `after-leave`.
 
 ---
@@ -210,7 +215,7 @@ Your styles, transitions and transforms go on the panel, so they never fight wit
 | Attribute        | Values                               | On                       | Use                                         |
 |------------------|--------------------------------------|--------------------------|---------------------------------------------|
 | `data-sbf-state` | `open` / `closed`                    | reference                | Open/closed styles (e.g. rotate an icon)    |
-| `data-sbf-state` | `open`                               | panel                    | Always `open` while rendered: style the exit with the leave classes of `transition` |
+| `data-sbf-state` | `open` / `closed`                    | panel                    | `closed` from the start of the leave transition: style or animate the exit |
 | `data-sbf-side`  | `top` / `bottom` / `left` / `right`  | panel                    | Real side after flip: directional animation |
 | `data-sbf-align` | `start` / `end` / absent             | panel                    | Alignment part of the placement             |
 
@@ -223,8 +228,13 @@ Set on the wrapper and inherited by the panel:
 | `--sbf-reference-width`  | Width of the reference                               |
 | `--sbf-available-width`  | Horizontal space left before overflowing the viewport |
 | `--sbf-available-height` | Vertical space left before overflowing the viewport  |
+| `--sbf-transform-origin` | Corner or edge of the panel facing the reference, for `transform-origin` |
 
 All attributes and variables use the `sbf` prefix, so they do not clash with other libraries in the same app (e.g. Radix / Reka UI `data-state`).
+
+### Stacking
+
+The wrapper is positioned with a CSS `transform`, which creates a stacking context: a `z-index` on the panel (e.g. a `z-50` class) only orders it inside the wrapper and has no effect on the rest of the page. Set the `zIndex` prop of `SbFloating` instead, which goes on the wrapper.
 
 ### Plain CSS
 
@@ -246,6 +256,7 @@ Panels are teleported to `body`, so their styles cannot be `scoped` to the compo
 /* <SbFloating transition="pop"> */
 .pop-enter-active,
 .pop-leave-active {
+  transform-origin: var(--sbf-transform-origin);
   transition: opacity 150ms ease, transform 150ms ease;
 }
 .pop-enter-from,
@@ -257,6 +268,18 @@ Panels are teleported to `body`, so their styles cannot be `scoped` to the compo
 /* direction from the side resolved after flip */
 .pop-enter-from[data-sbf-side='bottom'] { transform: translateY(-6px); }
 .pop-enter-from[data-sbf-side='top'] { transform: translateY(6px); }
+
+/* respect the user's motion setting */
+@media (prefers-reduced-motion: reduce) {
+  .pop-enter-active,
+  .pop-leave-active {
+    transition: opacity 150ms ease;
+  }
+  .pop-enter-from,
+  .pop-leave-to {
+    transform: none;
+  }
+}
 ```
 
 ### Tailwind (v4)
@@ -266,7 +289,16 @@ Panels are teleported to `body`, so their styles cannot be `scoped` to the compo
   Options
   <span class="inline-block transition-transform group-data-[sbf-state=open]:rotate-180">▾</span>
 </SbReference>
-<SbFloating class="max-h-(--sbf-available-height) w-(--sbf-reference-width) overflow-y-auto rounded border bg-white shadow-lg">
+<SbFloating
+  :z-index="50"
+  :transition="{
+    enterActiveClass: 'transition duration-150 ease-out motion-reduce:transition-none',
+    enterFromClass: 'opacity-0 scale-95',
+    leaveActiveClass: 'transition duration-100 ease-in motion-reduce:transition-none',
+    leaveToClass: 'opacity-0 scale-95',
+  }"
+  class="max-h-(--sbf-available-height) w-(--sbf-reference-width) origin-(--sbf-transform-origin) overflow-y-auto rounded border bg-white shadow-lg"
+>
   …
 </SbFloating>
 ```
@@ -275,11 +307,29 @@ Panels are teleported to `body`, so their styles cannot be `scoped` to the compo
 
 ## ♿ Accessibility
 
-- `SbReference` gets `aria-expanded`, `aria-controls` (pointing to the panel `id`) and `aria-haspopup`; non-interactive tags get `role="button"`, `tabindex="0"` and Enter/Space.
-- `SbFloating` gets an `id` generated with Vue `useId()` (SSR safe) and a `role` (`dialog` by default).
-- Escape closes the innermost open panel; a press outside closes the panel. A container nested inside a panel counts as part of it.
-- With `autoFocus`, focus moves inside the panel after it is positioned.
-- When the panel closes with focus inside it, focus returns to the reference (with or without `autoFocus`).
+- `SbReference` gets an `id`, `aria-expanded`, `aria-controls` (pointing to the panel `id`) and `aria-haspopup` (following the panel `role`); non-interactive tags get `role="button"`, `tabindex="0"` and Enter/Space.
+- `SbFloating` gets an `id` generated with Vue `useId()` (SSR safe), a `role` (`dialog` by default) and, with a popup role (`dialog`, `alertdialog`, `menu`, `listbox`, `tree`, `grid`), `aria-labelledby` pointing to the reference.
+- **Tab order.** The panel is teleported to the end of `body`, so the library keeps the order a reader expects: Tab on the open reference enters the panel, Shift+Tab from its first element returns to the reference, Tab from its last element moves on to what follows the reference. Two hidden focus guards (`data-sbf-focus-guard`) around the panel do this; they are not rendered with `teleportDisabled`.
+- **Focus.** By default (`autoFocus`) focus moves inside the panel once it is positioned. When the panel closes with focus inside it, focus returns to the reference without scrolling the page.
+- **Dismissal.**
+  - Escape closes the most recently opened panel. It is ignored when a widget inside has already handled it (`event.preventDefault()`) and while an IME composition is in progress.
+  - A press outside closes the panel; on touch, only a tap does, so starting a scroll keeps it open.
+  - Moving focus outside (e.g. tabbing past the last element) closes it.
+  - A container nested inside a panel counts as part of it.
+- **What is up to you.** The library does not implement the keyboard model of composite widgets: for `role="menu"`, `listbox` or `grid` panels, add the arrow-key navigation, Home/End and typeahead those roles promise to screen-reader users, and use valid structure (`menuitem` elements directly inside `menu`, no `ul > li` in between). A tooltip panel should use `role="tooltip"` and `:auto-focus="false"`, with `aria-describedby` on the trigger pointing to an element with your own `id` inside the panel (the [playground](playground/App.vue) has an example).
+
+---
+
+## 🔀 Migrating from v3
+
+The next major release changes these defaults:
+
+- **`autoFocus` is `true`.** Focus moves inside the panel when it opens. Set `:auto-focus="false"` on panels that must not take focus, such as tooltips.
+- **`ariaHaspopup` follows the panel `role`** instead of defaulting to `dialog`: drop the matching `aria-haspopup` you set by hand, keep it only where it differs from the role.
+- **Focus moving outside closes the panel.** Set `:close-on-focus-out="false"` to keep the previous behaviour.
+- **The panel is named after the reference** with `aria-labelledby`; pass `aria-label` or `aria-labelledby` to name it differently.
+- **Escape** no longer closes the panel when a widget inside called `preventDefault()` on it, and it now calls `preventDefault()` itself.
+- **`data-sbf-state` on the panel** becomes `closed` during the leave transition.
 
 ---
 
