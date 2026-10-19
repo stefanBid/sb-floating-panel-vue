@@ -6,5 +6,5 @@
     "noEmit": true,
     "noUnusedLocals": false
   },
-  "include": ["src", "playground"]
+  "include": ["src", "playground", "test", "vitest.config.mts"]
 }

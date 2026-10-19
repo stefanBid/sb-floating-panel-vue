@@ -1,188 +1,113 @@
 <script setup lang="ts">
-import type { Placement } from '@floating-ui/vue';
-import type { CSSProperties } from 'vue';
-import { computed, ref, Ref, useAttrs } from 'vue';
-
-/**
- * Props for the SbFloating component.
- * This component renders the floating panel and (optionally) its arrow using teleport.
- */
-interface SbFloatingProps {
-  /**
-   * The ref to bind to the floating panel element.
-   */
-  floatingRef: Ref<HTMLElement | null>;
-
-  /**
-   * Optional ref to bind to the floating arrow element.
-   */
-  floatingArrowRef?: Ref<HTMLElement | null>;
-
-  /**
-   * Whether the floating panel is open (visible).
-   */
-  isOpen: boolean;
-
-  /**
-   * The final placement resolved by Floating UI (e.g., 'bottom-start').
-   */
-  floatingPlacement: Placement;
-
-  /**
-   * Computed inline styles for the floating panel.
-   */
-  floatingStyle: CSSProperties;
-
-  /**
-   * Computed inline styles for the floating arrow (optional).
-   */
-  floatingArrowStyle?: CSSProperties;
-
-  /**
-   * Optional dimension (width & height) of the floating arrow.
-   * If provided, will override default arrow size.
-   */
-  arrowDimensions?: number;
-
-  /**
-   * Optional z-index to apply to the floating panel and arrow.
-   */
-  zIndex?: number;
-
-  /**
-   * Animation name used in Vue <transition>.
-   * Supported values: 'fade', 'scale-fade', 'none'.
-   * @default 'scale-fade'
-   */
-  animation?: 'fade' | 'scale-fade' | 'none';
-
-  /**
-   * Duration of the transition animation in milliseconds.
-   * @default 300
-   */
-  duration?: number;
-}
-
-const props = withDefaults(defineProps<SbFloatingProps>(), {
-  floatingArrowRef: () => ref(null),
-  floatingArrowStyle: undefined,
-  arrowDimensions: undefined,
-  zIndex: undefined,
-  animation: 'scale-fade',
-  duration: 300,
-});
+import { computed, nextTick, ref, watch, type CSSProperties } from 'vue';
+import { useSbFloatingContext } from '../context';
+import type { SbFloatingProps } from '../types';
 
 defineOptions({ inheritAttrs: false });
-const attrs = useAttrs();
 
-/**
- * Final computed styles for the floating panel.
- */
-const getFloatingStyle = computed<CSSProperties>(() => {
-  const style: CSSProperties = {
-    ...props.floatingStyle,
-    '--sb-transition-duration': props.duration + 'ms',
-  };
-
-  if (props.zIndex !== undefined) {
-    style.zIndex = props.zIndex;
-  }
-
-  return style;
+const props = withDefaults(defineProps<SbFloatingProps>(), {
+  as: 'div',
+  role: 'dialog',
+  transition: undefined,
+  teleportTo: 'body',
+  teleportDisabled: false,
+  zIndex: undefined,
+  autoFocus: false,
 });
 
-/**
- * Final computed styles for the arrow, including offset based on placement.
- */
-const getFloatingArrowStyle = computed<CSSProperties>(() => {
-  const result = { ...(props.floatingArrowStyle || ({} as CSSProperties)) };
+const emit = defineEmits<{
+  /** The enter transition has finished (right after opening when there is no transition). */
+  'after-enter': [];
+  /** The leave transition has finished and the panel is removed from the DOM. */
+  'after-leave': [];
+}>();
 
-  if (props.arrowDimensions) {
-    const size = props.arrowDimensions;
-    const offset = `-${size / 2}px`;
-    const side = props.floatingPlacement.split('-')[0];
+const context = useSbFloatingContext('SbFloating');
+const { isOpen, floatingId, side, align } = context;
 
-    switch (side) {
-      case 'top':
-        result.bottom = offset;
-        break;
-      case 'bottom':
-        result.top = offset;
-        break;
-      case 'left':
-        result.right = offset;
-        break;
-      case 'right':
-        result.left = offset;
-        break;
-    }
+// The wrapper stays mounted until the leave transition of the panel has finished,
+// so the panel keeps its position while it animates out.
+const isMounted = ref(isOpen.value);
+const panel = ref<HTMLElement | null>(null);
 
-    result.width = `${size}px`;
-    result.height = `${size}px`;
+const setFloating = (el: unknown) => {
+  context.floating.value = el instanceof HTMLElement ? el : null;
+};
+
+const setPanel = (el: unknown) => {
+  panel.value = el instanceof HTMLElement ? el : null;
+};
+
+// Outer wrapper: positioning only, never visual styles
+const wrapperStyle = computed<CSSProperties>(() => ({
+  ...context.floatingStyles.value,
+  ...(props.zIndex !== undefined ? { zIndex: props.zIndex } : {}),
+}));
+
+const onAfterEnter = () => emit('after-enter');
+
+const onAfterLeave = () => {
+  if (!isOpen.value) isMounted.value = false;
+  emit('after-leave');
+};
+
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+
+const focusPanel = () => {
+  const el = panel.value;
+  if (!el) return;
+  const target =
+    el.querySelector<HTMLElement>('[autofocus]') ?? el.querySelector<HTMLElement>(FOCUSABLE) ?? el;
+  target.focus({ preventScroll: true });
+};
+
+watch(isOpen, (value) => {
+  if (value) {
+    isMounted.value = true;
+    return;
   }
-
-  if (props.zIndex !== undefined) {
-    result.zIndex = props.zIndex;
-  }
-
-  return result;
+  // Runs before the panel is removed: give focus back to the trigger if it was inside
+  const active = document.activeElement;
+  if (active && context.floating.value?.contains(active)) context.reference.value?.focus();
 });
 
-/**
- * Resolved transition name.
- */
-const getAnimation = computed(() => {
-  return props.animation === 'fade' ? 'fade' : props.animation === 'scale-fade' ? 'scale-fade' : '';
-});
+// Focus only after the first position is computed, so the page does not scroll to (0, 0)
+watch(
+  () => isOpen.value && context.isPositioned.value,
+  async (ready) => {
+    if (!ready || !props.autoFocus) return;
+    await nextTick();
+    focusPanel();
+  }
+);
 </script>
 
 <template>
-  <teleport to="body">
-    <transition :name="getAnimation">
-      <div v-if="props.isOpen" :ref="props.floatingRef" :style="getFloatingStyle" v-bind="attrs">
-        <slot></slot>
-        <div
-          v-if="props.floatingArrowRef"
-          :ref="props.floatingArrowRef"
-          :style="getFloatingArrowStyle"
-        ></div>
-      </div>
-    </transition>
-  </teleport>
+  <Teleport :to="props.teleportTo" :disabled="props.teleportDisabled">
+    <div v-if="isMounted" :ref="setFloating" :style="wrapperStyle">
+      <Transition
+        :name="props.transition"
+        :css="!!props.transition"
+        appear
+        @after-enter="onAfterEnter"
+        @after-leave="onAfterLeave"
+      >
+        <component
+          :is="props.as"
+          v-if="isOpen"
+          v-bind="$attrs"
+          :id="floatingId"
+          :ref="setPanel"
+          :role="props.role"
+          :tabindex="props.autoFocus ? -1 : undefined"
+          :data-sbf-state="isOpen ? 'open' : 'closed'"
+          :data-sbf-side="side"
+          :data-sbf-align="align"
+        >
+          <slot></slot>
+        </component>
+      </Transition>
+    </div>
+  </Teleport>
 </template>
-
-<style lang="css" scoped>
-/* Fade */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity var(--sb-transition-duration) ease-in-out;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-.fade-enter-to,
-.fade-leave-from {
-  opacity: 1;
-}
-
-/* Scale + fade */
-.scale-fade-enter-active,
-.scale-fade-leave-active {
-  transition:
-    opacity var(--sb-transition-duration) ease-in-out,
-    transform var(--sb-transition-duration) ease-in-out;
-}
-
-.scale-fade-enter-from,
-.scale-fade-leave-to {
-  opacity: 0;
-  transform: scale(0.95);
-}
-
-.scale-fade-enter-to,
-.scale-fade-leave-from {
-  opacity: 1;
-  transform: scale(1);
-}
-</style>

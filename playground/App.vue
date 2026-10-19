@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Placement } from '@floating-ui/vue';
-import { computed, ref } from 'vue';
-import { SbContainer, SbFloating, SbReference, useSbFloatingPanel } from '../src';
+import { ref } from 'vue';
+import { SbContainer, SbFloating, SbReference } from '../src';
+import type { SbPlacement, SbStrategy } from '../src';
 
-const placements: Placement[] = [
+const placements: SbPlacement[] = [
   'top-start',
   'top',
   'top-end',
@@ -19,124 +19,114 @@ const placements: Placement[] = [
 ];
 
 const menuItems = ['Profile', 'Settings', 'Sign out'];
+const lastAction = ref('none');
 
-// Placement explorer: SbContainer reads its props once, so the key remounts it on every change
-const explorerPlacement = ref<Placement>('bottom');
+// Popover controlled with v-model:open
+const popoverOpen = ref(false);
+const feedback = ref('');
+
+// Placement explorer: every prop is reactive, no remount needed
+const explorerPlacement = ref<SbPlacement>('bottom');
 const explorerOffset = ref(12);
-const explorerAnimation = ref<'fade' | 'scale-fade' | 'none'>('scale-fade');
-const explorerKey = computed(
-  () => `${explorerPlacement.value}-${explorerOffset.value}-${explorerAnimation.value}`
-);
-
-// Composable usage, with a fixed strategy inside a scrollable box
-const {
-  reference,
-  floating,
-  floatingArrow,
-  floatingPlacement,
-  floatingStyle,
-  floatingArrowStyle,
-  isOpen,
-  toggle,
-} = useSbFloatingPanel({
-  placement: 'right',
-  strategy: 'fixed',
-  offsetValue: 10,
-  hasArrow: true,
-});
+const explorerPadding = ref(8);
+const explorerStrategy = ref<SbStrategy>('absolute');
+const explorerMatchWidth = ref<'off' | 'width' | 'min'>('off');
+const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
 </script>
 
 <template>
   <main class="page">
     <header>
       <h1>sb-floating-panel-vue</h1>
-      <p>Playground for the components and the composable. Run it with <code>npm run dev</code>.</p>
+      <p>
+        Playground for the v3 components. The library ships no CSS: every style below lives in this
+        file. Run it with <code>npm run dev</code>.
+      </p>
     </header>
 
     <section class="card">
-      <h2>Dropdown</h2>
+      <h2>Dropdown menu</h2>
       <p>
-        Components, <code>bottom-start</code>, width synced with the trigger
-        (<code>hasResize</code>).
+        <code>matchWidth="min"</code>, <code>role="menu"</code>, <code>pop</code> transition, the
+        chevron rotates with <code>data-sbf-state</code>.
       </p>
-      <SbContainer placement="bottom-start" :offset-value="6" :has-resize="true">
-        <template
-          #default="{
-            reference: menuRef,
-            floating: menuPanel,
-            floatingPlacement: menuPlacement,
-            floatingStyle: menuStyle,
-            isOpen: menuOpen,
-            toggle: menuToggle,
-            close: menuClose,
-          }"
-        >
-          <SbReference
-            :reference-ref="menuRef"
-            class="trigger trigger--wide"
-            :on-click="menuToggle"
-          >
-            Account menu
+      <SbContainer placement="bottom-start" :offset="6" match-width="min">
+        <template #default="{ close }">
+          <SbReference class="trigger trigger--wide" aria-haspopup="menu">
+            Account menu <span class="chevron" aria-hidden="true">▾</span>
           </SbReference>
-          <SbFloating
-            :is-open="menuOpen.value"
-            :floating-ref="menuPanel"
-            :floating-placement="menuPlacement.value"
-            :floating-style="menuStyle.value"
-            :z-index="20"
-            class="panel"
-          >
+          <SbFloating role="menu" transition="pop" class="panel">
             <ul class="menu">
               <li v-for="item in menuItems" :key="item">
-                <button type="button" @click="menuClose()">{{ item }}</button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  @click="
+                    lastAction = item;
+                    close();
+                  "
+                >
+                  {{ item }}
+                </button>
               </li>
             </ul>
           </SbFloating>
         </template>
       </SbContainer>
+      <p class="note">Last action: {{ lastAction }}</p>
     </section>
 
     <section class="card">
-      <h2>Tooltip with arrow</h2>
-      <p>Components, <code>top</code>, custom arrow size, <code>fade</code> animation.</p>
-      <SbContainer placement="top" :offset-value="10" :has-arrow="true">
-        <template
-          #default="{
-            reference: tipRef,
-            floating: tipPanel,
-            floatingArrow: tipArrow,
-            floatingPlacement: tipPlacement,
-            floatingStyle: tipStyle,
-            floatingArrowStyle: tipArrowStyle,
-            isOpen: tipOpen,
-            open: tipShow,
-            close: tipHide,
-          }"
-        >
+      <h2>Popover with a form</h2>
+      <p>
+        <code>v-model:open</code> and <code>auto-focus</code>: focus moves to the textarea once the
+        panel is positioned and goes back to the trigger on Escape.
+      </p>
+      <SbContainer v-model:open="popoverOpen" placement="right-start">
+        <template #default="{ close }">
+          <SbReference class="trigger">Send feedback</SbReference>
+          <SbFloating auto-focus transition="pop" class="panel panel--padded panel--form">
+            <form
+              @submit.prevent="
+                feedback = '';
+                close();
+              "
+            >
+              <label for="feedback">Feedback</label>
+              <textarea id="feedback" v-model="feedback" rows="3"></textarea>
+              <button type="submit" class="trigger">Send</button>
+            </form>
+          </SbFloating>
+        </template>
+      </SbContainer>
+      <p class="note">
+        Open: {{ popoverOpen }} ·
+        <button type="button" class="link" @click="popoverOpen = !popoverOpen">
+          toggle from outside
+        </button>
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Tooltip</h2>
+      <p>
+        <code>trigger="manual"</code>: the panel opens from the slot functions, here on hover and
+        focus.
+      </p>
+      <SbContainer placement="top" trigger="manual" :offset="6">
+        <template #default="{ open, close }">
           <SbReference
-            :reference-ref="tipRef"
             as="span"
             class="trigger trigger--text"
-            @mouseenter="tipShow()"
-            @mouseleave="tipHide()"
+            aria-haspopup="false"
+            @mouseenter="open()"
+            @mouseleave="close()"
+            @focus="open()"
+            @blur="close()"
           >
-            Hover me
+            Hover or focus me
           </SbReference>
-          <SbFloating
-            :is-open="tipOpen.value"
-            :floating-ref="tipPanel"
-            :floating-arrow-ref="tipArrow"
-            :floating-placement="tipPlacement.value"
-            :floating-style="tipStyle.value"
-            :floating-arrow-style="tipArrowStyle.value"
-            :arrow-dimensions="10"
-            :z-index="30"
-            animation="fade"
-            :duration="150"
-            class="tooltip"
-          >
-            Tooltip text
-          </SbFloating>
+          <SbFloating role="tooltip" transition="pop" class="tooltip">Tooltip text</SbFloating>
         </template>
       </SbContainer>
     </section>
@@ -157,48 +147,52 @@ const {
           <input v-model.number="explorerOffset" type="range" min="0" max="40" />
         </label>
         <label>
-          Animation
-          <select v-model="explorerAnimation">
-            <option value="scale-fade">scale-fade</option>
-            <option value="fade">fade</option>
+          Padding: {{ explorerPadding }}px
+          <input v-model.number="explorerPadding" type="range" min="0" max="40" />
+        </label>
+        <label>
+          Strategy
+          <select v-model="explorerStrategy">
+            <option value="absolute">absolute</option>
+            <option value="fixed">fixed</option>
+          </select>
+        </label>
+        <label>
+          matchWidth
+          <select v-model="explorerMatchWidth">
+            <option value="off">false</option>
+            <option value="width">true</option>
+            <option value="min">'min'</option>
+          </select>
+        </label>
+        <label>
+          Transition
+          <select v-model="explorerTransition">
+            <option value="slide">slide (by side)</option>
+            <option value="pop">pop</option>
             <option value="none">none</option>
           </select>
         </label>
       </div>
       <div class="stage">
         <SbContainer
-          :key="explorerKey"
           :placement="explorerPlacement"
-          :offset-value="explorerOffset"
-          :has-arrow="true"
+          :offset="explorerOffset"
+          :padding="explorerPadding"
+          :strategy="explorerStrategy"
+          :match-width="
+            explorerMatchWidth === 'off' ? false : explorerMatchWidth === 'min' ? 'min' : true
+          "
+          :close-on-click-outside="false"
+          default-open
         >
-          <template
-            #default="{
-              reference: exRef,
-              floating: exPanel,
-              floatingArrow: exArrow,
-              floatingPlacement: exPlacement,
-              floatingStyle: exStyle,
-              floatingArrowStyle: exArrowStyle,
-              isOpen: exOpen,
-              toggle: exToggle,
-            }"
-          >
-            <SbReference :reference-ref="exRef" class="trigger" :on-click="exToggle">
-              Toggle panel
-            </SbReference>
+          <template #default="{ placement }">
+            <SbReference class="trigger trigger--wide">Toggle panel</SbReference>
             <SbFloating
-              :is-open="exOpen.value"
-              :floating-ref="exPanel"
-              :floating-arrow-ref="exArrow"
-              :floating-placement="exPlacement.value"
-              :floating-style="exStyle.value"
-              :floating-arrow-style="exArrowStyle.value"
-              :animation="explorerAnimation"
-              :z-index="20"
+              :transition="explorerTransition === 'none' ? undefined : explorerTransition"
               class="panel panel--padded"
             >
-              Resolved placement: <strong>{{ exPlacement.value }}</strong>
+              Resolved placement: <strong>{{ placement }}</strong>
             </SbFloating>
           </template>
         </SbContainer>
@@ -206,27 +200,51 @@ const {
     </section>
 
     <section class="card">
-      <h2>Composable</h2>
+      <h2>Scroll container</h2>
       <p>
-        <code>useSbFloatingPanel</code> with <code>strategy: 'fixed'</code>. Open it, then scroll
-        the box: the panel flips and shifts to stay visible.
+        <code>strategy="fixed"</code> and <code>hide-when-detached</code>. Open it, then scroll the
+        box: the panel flips, shifts and hides once the trigger leaves the box. Its height follows
+        <code>--sbf-available-height</code>.
       </p>
       <div class="scroller">
         <div class="scroller__content">
-          <button ref="reference" type="button" class="trigger" @click="toggle()">
-            Open composable panel
-          </button>
+          <SbContainer placement="right" strategy="fixed" hide-when-detached>
+            <SbReference class="trigger">Open panel</SbReference>
+            <SbFloating class="panel panel--padded panel--scroll" :z-index="20">
+              <p v-for="n in 12" :key="n">Line {{ n }}</p>
+            </SbFloating>
+          </SbContainer>
         </div>
       </div>
-      <div
-        v-if="isOpen"
-        ref="floating"
-        :style="floatingStyle"
-        class="panel panel--padded panel--top"
-      >
-        Placement: <strong>{{ floatingPlacement }}</strong>
-        <div ref="floatingArrow" :style="floatingArrowStyle"></div>
-      </div>
+    </section>
+
+    <section class="card">
+      <h2>Nested menu</h2>
+      <p>
+        A container inside a panel belongs to it: clicks in the submenu keep the parent open, Escape
+        closes the innermost first.
+      </p>
+      <SbContainer>
+        <SbReference class="trigger" aria-haspopup="menu">File</SbReference>
+        <SbFloating role="menu" transition="pop" class="panel">
+          <ul class="menu">
+            <li><button type="button" role="menuitem">New</button></li>
+            <li>
+              <SbContainer placement="right-start" :offset="4">
+                <SbReference class="menu__sub" role="menuitem" aria-haspopup="menu">
+                  Open recent ▸
+                </SbReference>
+                <SbFloating role="menu" transition="pop" class="panel">
+                  <ul class="menu">
+                    <li><button type="button" role="menuitem">notes.md</button></li>
+                    <li><button type="button" role="menuitem">todo.md</button></li>
+                  </ul>
+                </SbFloating>
+              </SbContainer>
+            </li>
+          </ul>
+        </SbFloating>
+      </SbContainer>
     </section>
   </main>
 </template>
@@ -269,6 +287,156 @@ body {
 code {
   font-size: 0.9em;
 }
+
+/* The panels are teleported to body: their styles cannot be scoped to this component */
+.panel {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
+  box-sizing: border-box;
+}
+
+.panel--padded {
+  padding: 10px 14px;
+}
+
+.panel--form form {
+  display: grid;
+  gap: 8px;
+  width: 240px;
+}
+
+.panel--form textarea {
+  font: inherit;
+  resize: vertical;
+}
+
+.panel--scroll {
+  max-height: min(240px, var(--sbf-available-height));
+  overflow-y: auto;
+}
+
+.panel--scroll p {
+  margin: 0;
+}
+
+.tooltip {
+  background: var(--tooltip);
+  color: var(--bg);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.menu {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+
+.menu button,
+.menu__sub {
+  display: block;
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.menu button:hover,
+.menu button:focus-visible,
+.menu__sub[data-sbf-state='open'] {
+  background: var(--bg);
+}
+
+.trigger {
+  font: inherit;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.chevron {
+  display: inline-block;
+  transition: transform 150ms ease;
+}
+
+.trigger[data-sbf-state='open'] .chevron {
+  transform: rotate(180deg);
+}
+
+/* pop: scale and fade, the transform is safe because the panel is not the positioned element */
+.pop-enter-active,
+.pop-leave-active {
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.pop-enter-from,
+.pop-leave-to {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+/* slide: direction follows the side resolved after flip */
+.slide-enter-active,
+.slide-leave-active {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-from[data-sbf-side='bottom'],
+.slide-leave-to[data-sbf-side='bottom'] {
+  transform: translateY(-6px);
+}
+
+.slide-enter-from[data-sbf-side='top'],
+.slide-leave-to[data-sbf-side='top'] {
+  transform: translateY(6px);
+}
+
+.slide-enter-from[data-sbf-side='right'],
+.slide-leave-to[data-sbf-side='right'] {
+  transform: translateX(-6px);
+}
+
+.slide-enter-from[data-sbf-side='left'],
+.slide-leave-to[data-sbf-side='left'] {
+  transform: translateX(6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pop-enter-active,
+  .pop-leave-active,
+  .slide-enter-active,
+  .slide-leave-active,
+  .chevron {
+    transition: none;
+  }
+}
 </style>
 
 <style scoped>
@@ -296,26 +464,16 @@ header p,
   color: var(--muted);
 }
 
+.card p.note {
+  margin: 12px 0 0;
+  font-size: 0.875rem;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 20px;
-}
-
-.trigger {
-  font: inherit;
-  padding: 8px 14px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
-}
-
-.trigger:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
 }
 
 .trigger--wide {
@@ -328,52 +486,14 @@ header p,
   border-style: dashed;
 }
 
-.panel {
-  background: var(--surface);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
-  box-sizing: border-box;
-}
-
-.panel--padded {
-  padding: 10px 14px;
-}
-
-.panel--top {
-  z-index: 20;
-}
-
-.tooltip {
-  background: var(--tooltip);
-  color: var(--bg);
-  padding: 6px 10px;
-  border-radius: 6px;
-  font-size: 0.875rem;
-}
-
-.menu {
-  list-style: none;
-  margin: 0;
-  padding: 4px;
-}
-
-.menu button {
-  width: 100%;
+.link {
   font: inherit;
-  text-align: left;
-  padding: 8px 10px;
+  padding: 0;
   border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--text);
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
   cursor: pointer;
-}
-
-.menu button:hover,
-.menu button:focus-visible {
-  background: var(--bg);
 }
 
 .controls {

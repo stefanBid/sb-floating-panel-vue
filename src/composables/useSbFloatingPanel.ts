@@ -1,209 +1,116 @@
-import { useFloating, flip, shift, autoUpdate, offset, arrow } from '@floating-ui/vue';
-import type { FloatingElement, Placement, Strategy } from '@floating-ui/vue';
-
+import {
+  autoUpdate,
+  flip,
+  hide,
+  limitShift,
+  offset,
+  shift,
+  size,
+  useFloating,
+} from '@floating-ui/vue';
+import type { Middleware } from '@floating-ui/vue';
 import {
   computed,
-  type CSSProperties,
-  nextTick,
-  onMounted,
-  onUnmounted,
-  type Ref,
-  type ComputedRef,
   ref,
-  watch,
+  toValue,
+  type ComputedRef,
+  type CSSProperties,
+  type MaybeRefOrGetter,
+  type Ref,
 } from 'vue';
+import type { SbAlignment, SbPlacement, SbSide, SbStrategy } from '../types';
 
 /**
- * Configuration options for the `useSbFloatingPanel` composable.
+ * Options of the internal `useSbFloatingPanel` composable. Every option can be a value,
+ * a ref or a getter, so `SbContainer` props stay reactive.
  */
-interface FloatingSettings {
-  /**
-   * Defines the preferred placement of the floating element relative to the reference.
-   * Example: 'top', 'bottom-start', 'right-end', etc.
-   */
-  placement: Placement;
-
-  /**
-   * Determines the positioning strategy for the floating element.
-   * Can be either 'absolute' or 'fixed'.
-   */
-  strategy: Strategy;
-
-  /**
-   * Specifies the distance (in pixels) between the reference and floating elements.
-   */
-  offsetValue: number;
-
-  /**
-   * Enables the use of a directional arrow pointing from the floating element to the reference.
-   */
-  hasArrow?: boolean;
-
-  /**
-   * When enabled, synchronizes the width of the floating element to match the reference element.
-   * Useful for dropdowns or inputs.
-   */
-  hasResize?: boolean;
+export interface FloatingPanelOptions {
+  isOpen: MaybeRefOrGetter<boolean>;
+  placement: MaybeRefOrGetter<SbPlacement>;
+  strategy: MaybeRefOrGetter<SbStrategy>;
+  offset: MaybeRefOrGetter<number>;
+  padding: MaybeRefOrGetter<number>;
+  matchWidth: MaybeRefOrGetter<boolean | 'min'>;
+  hideWhenDetached: MaybeRefOrGetter<boolean>;
 }
 
-/**
- * `useSbFloatingPanel` is a composable that wraps Floating UI logic to manage
- * floating elements with optional arrow and dynamic width support.
- *
- * It provides bindings and style objects ready to apply to your `ref` elements in Vue templates.
- *
- * @param settings - Configuration options for placement, offset, and behavior.
- * @returns Bindings and utility functions to control the floating panel.
- *
- * @example
- * ```ts
- * const {
- *   reference,
- *   floating,
- *   floatingArrow,
- *   floatingPlacement,
- *   floatingStyle,
- *   floatingArrowStyle,
- *   isOpen,
- *   toggle,
- *   open,
- *   close
- * } = useSbFloatingPanel({
- *   placement: 'bottom',
- *   strategy: 'absolute',
- *   offsetValue: 10,
- *   hasArrow: true,
- *   hasResize: false
- * });
- * ```
- *
- * @example
- * ```html
- * <div ref="reference">Anchor</div>
- * <div ref="floating" v-if="isOpen">Panel</div>
- * <div ref="floatingArrow" v-if="isOpen">Arrow</div>
- * ```
- */
-export function useSbFloatingPanel(settings: FloatingSettings): {
+export interface FloatingPanel {
   reference: Ref<HTMLElement | null>;
-  floating: Ref<FloatingElement | null>;
-  floatingArrow: Ref<HTMLElement | null>;
-  floatingPlacement: Ref<Placement>;
-  floatingStyle: ComputedRef<CSSProperties>;
-  floatingArrowStyle: ComputedRef<CSSProperties>;
-  isOpen: Ref<boolean>;
-  toggle: () => void;
-  open: () => void;
-  close: () => void;
-} {
-  const reference = ref<HTMLElement | null>(null);
-  const floating = ref<FloatingElement | null>(null);
-  const floatingArrow = ref<HTMLElement | null>(null);
-  const isOpen = ref(false);
-  const resizeObserver = ref<ResizeObserver | null>(null);
-  let isObserving = false;
+  floating: Ref<HTMLElement | null>;
+  /** Positioning styles for the outer wrapper (Floating UI styles + `visibility` from `hide`). */
+  floatingStyles: ComputedRef<CSSProperties>;
+  /** Placement resolved after `flip`. */
+  placement: Readonly<Ref<SbPlacement>>;
+  side: ComputedRef<SbSide>;
+  align: ComputedRef<SbAlignment | undefined>;
+  isPositioned: Readonly<Ref<boolean>>;
+  update: () => void;
+}
 
-  const { floatingStyles, placement, middlewareData } = useFloating(reference, floating, {
-    open: isOpen,
-    placement: settings.placement,
-    strategy: settings.strategy,
-    transform: false,
-    middleware: [offset(settings.offsetValue), flip(), shift(), arrow({ element: floatingArrow })],
+const px = (value: number) => `${Math.max(0, value)}px`;
+
+/**
+ * Wraps Floating UI for the components. Not part of the public API.
+ */
+export function useSbFloatingPanel(options: FloatingPanelOptions): FloatingPanel {
+  const reference = ref<HTMLElement | null>(null);
+  const floating = ref<HTMLElement | null>(null);
+
+  const middleware = computed<Middleware[]>(() => {
+    const padding = toValue(options.padding);
+    const matchWidth = toValue(options.matchWidth);
+    // Aligned placements (`bottom-start`) flip before shifting, centered ones shift first
+    // (floating-ui.com/docs/flip, "Combining with shift()").
+    const aligned = toValue(options.placement).includes('-');
+    const flipMiddleware = flip({
+      padding,
+      crossAxis: 'alignment',
+      fallbackAxisSideDirection: 'end',
+    });
+    const shiftMiddleware = shift({ padding, limiter: limitShift() });
+
+    const list: Middleware[] = [
+      offset(toValue(options.offset)),
+      ...(aligned ? [flipMiddleware, shiftMiddleware] : [shiftMiddleware, flipMiddleware]),
+      // After flip, with the same padding (floating-ui.com/docs/size).
+      size({
+        padding,
+        apply({ rects, elements, availableWidth, availableHeight }) {
+          const { style } = elements.floating;
+          const referenceWidth = px(rects.reference.width);
+          style.setProperty('--sbf-reference-width', referenceWidth);
+          style.setProperty('--sbf-available-width', px(availableWidth));
+          style.setProperty('--sbf-available-height', px(availableHeight));
+          style.width = matchWidth === true ? referenceWidth : '';
+          style.minWidth = matchWidth === 'min' ? referenceWidth : '';
+        },
+      }),
+    ];
+    if (toValue(options.hideWhenDetached)) list.push(hide({ padding }));
+    return list;
+  });
+
+  const {
+    floatingStyles: positionStyles,
+    middlewareData,
+    placement,
+    isPositioned,
+    update,
+  } = useFloating(reference, floating, {
+    open: () => toValue(options.isOpen),
+    placement: () => toValue(options.placement),
+    strategy: () => toValue(options.strategy),
+    middleware,
     whileElementsMounted: autoUpdate,
   });
 
-  const changeFloatingVisibility = (newState: boolean): void => {
-    isOpen.value = newState;
-  };
+  const floatingStyles = computed<CSSProperties>(() => ({
+    ...positionStyles.value,
+    ...(middlewareData.value.hide?.referenceHidden ? { visibility: 'hidden' } : {}),
+  }));
 
-  const open = () => changeFloatingVisibility(true);
-  const close = () => changeFloatingVisibility(false);
-  const toggle = () => changeFloatingVisibility(!isOpen.value);
+  const side = computed(() => placement.value.split('-')[0] as SbSide);
+  const align = computed(() => placement.value.split('-')[1] as SbAlignment | undefined);
 
-  const syncPopperWidthWithAnchor = (): void => {
-    if (floating.value && reference.value) {
-      floating.value.style.width = `${reference.value.offsetWidth}px`;
-    }
-  };
-
-  const floatingStyle = computed<CSSProperties>(() => {
-    return {
-      ...floatingStyles.value,
-    };
-  });
-
-  const floatingArrowStyle = computed<CSSProperties>(() => {
-    const arrowData = middlewareData.value.arrow;
-    const sideValue = placement.value.split('-')[0];
-
-    const base: CSSProperties = {
-      position: 'absolute',
-      transform: 'rotate(45deg)',
-      background: 'inherit',
-      width: '8px',
-      height: '8px',
-      left: arrowData?.x != null ? `${arrowData.x}px` : '',
-      top: arrowData?.y != null ? `${arrowData.y}px` : '',
-    };
-
-    // Offset the arrow based on the side of the floating element
-    switch (sideValue) {
-      case 'top':
-        base.bottom = '-4px';
-        break;
-      case 'bottom':
-        base.top = '-4px';
-        break;
-      case 'left':
-        base.right = '-4px';
-        break;
-      case 'right':
-        base.left = '-4px';
-        break;
-    }
-
-    return base;
-  });
-
-  watch(isOpen, async (newVal) => {
-    if (newVal && settings.hasResize && isObserving) {
-      await nextTick();
-      syncPopperWidthWithAnchor();
-    }
-  });
-
-  watch(reference, (newReference) => {
-    if (newReference && settings.hasResize && !isObserving) {
-      isObserving = true;
-      resizeObserver.value = new ResizeObserver(syncPopperWidthWithAnchor);
-      resizeObserver.value.observe(newReference);
-    }
-  });
-
-  onMounted(() => {
-    if (settings.hasResize && reference.value) {
-      isObserving = true;
-      resizeObserver.value = new ResizeObserver(syncPopperWidthWithAnchor);
-      resizeObserver.value.observe(reference.value);
-    }
-  });
-
-  onUnmounted(() => {
-    if (settings.hasResize) {
-      resizeObserver.value?.disconnect();
-    }
-  });
-
-  return {
-    reference,
-    floating,
-    floatingArrow,
-    floatingPlacement: placement,
-    floatingStyle,
-    floatingArrowStyle,
-    isOpen,
-    toggle,
-    open,
-    close,
-  };
+  return { reference, floating, floatingStyles, placement, side, align, isPositioned, update };
 }

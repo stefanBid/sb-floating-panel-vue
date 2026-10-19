@@ -1,100 +1,142 @@
+<script lang="ts">
+const handledEscapes = new WeakSet<Event>();
+</script>
+
 <script setup lang="ts">
-import type { Placement, Strategy } from '@floating-ui/vue';
-import { useSbFloatingPanel } from '../index';
+import { computed, inject, onScopeDispose, provide, toRef, useId, watch } from 'vue';
+import { useSbFloatingPanel } from '../composables/useSbFloatingPanel';
+import { sbFloatingContextKey, type SbFloatingContext } from '../context';
+import type { SbContainerExposed, SbContainerProps, SbContainerSlotProps } from '../types';
 
-/**
- * Props for the SbContainer component.
- * Serves as a controller and provider for the floating panel system.
- */
-interface SbContainerProps {
-  /**
-   * Placement of the floating panel relative to the reference.
-   * @default 'bottom-start'
-   */
-  placement?: Placement;
+defineOptions({ inheritAttrs: false });
 
-  /**
-   * Positioning strategy to use ('absolute' or 'fixed').
-   * @default 'absolute'
-   */
-  strategy?: Strategy;
-
-  /**
-   * Pixel offset between the reference and floating panel.
-   * @default 15
-   */
-  offsetValue?: number;
-
-  /**
-   * Whether to render an arrow pointing toward the reference element.
-   * @default false
-   */
-  hasArrow?: boolean;
-
-  /**
-   * When true, syncs the floating panel width to the reference width.
-   * @default false
-   */
-  hasResize?: boolean;
-}
-
-// Define and apply default prop values
-const props = withDefaults(defineProps<SbContainerProps>(), {
+const props = withDefaults(defineProps<Omit<SbContainerProps, 'open'>>(), {
   placement: 'bottom-start',
   strategy: 'absolute',
-  offsetValue: 15,
-  hasArrow: false,
-  hasResize: false,
+  offset: 8,
+  padding: 8,
+  matchWidth: false,
+  hideWhenDetached: false,
+  defaultOpen: false,
+  disabled: false,
+  trigger: 'click',
+  closeOnEscape: true,
+  closeOnClickOutside: true,
 });
 
-// Initialize floating panel behavior using the composable
-const {
-  isOpen,
-  reference,
-  floating,
-  floatingArrow,
-  floatingPlacement,
-  floatingStyle,
-  floatingArrowStyle,
-  toggle,
-  open,
-  close,
-} = useSbFloatingPanel({
-  placement: props.placement,
-  strategy: props.strategy,
-  offsetValue: props.offsetValue,
-  hasArrow: props.hasArrow,
-  hasResize: props.hasResize,
-});
+// `undefined` until the parent binds `v-model:open` or the panel is toggled once
+const model = defineModel<boolean | undefined>('open', { default: undefined });
 
-/**
- * The context object passed to the default slot.
- * Includes refs, reactive state, styles and controls for the floating panel.
- */
-const context = {
-  reference,
-  floating,
-  floatingArrow,
-  floatingPlacement,
-  floatingStyle,
-  floatingArrowStyle,
-  isOpen,
-  toggle,
-  open,
-  close,
+const emit = defineEmits<{
+  /** The panel has opened. */
+  open: [];
+  /** The panel has closed. */
+  close: [];
+}>();
+
+defineSlots<{
+  default?: (props: SbContainerSlotProps) => unknown;
+}>();
+
+const isOpen = computed(() => !props.disabled && (model.value ?? props.defaultOpen));
+
+const setOpen = (value: boolean) => {
+  if (value && props.disabled) return;
+  if (value !== isOpen.value) model.value = value;
 };
+const open = () => setOpen(true);
+const close = () => setOpen(false);
+const toggle = () => setOpen(!isOpen.value);
+
+const panel = useSbFloatingPanel({
+  isOpen,
+  placement: () => props.placement,
+  strategy: () => props.strategy,
+  offset: () => props.offset,
+  padding: () => props.padding,
+  matchWidth: () => props.matchWidth,
+  hideWhenDetached: () => props.hideWhenDetached,
+});
+
+const children = new Set<SbFloatingContext>();
+
+const context: SbFloatingContext = {
+  ...panel,
+  isOpen,
+  disabled: toRef(props, 'disabled'),
+  trigger: toRef(props, 'trigger'),
+  floatingId: `${useId()}-floating`,
+  open,
+  close,
+  toggle,
+  contains: (target) => {
+    if (!(target instanceof Node)) return false;
+    if (panel.reference.value?.contains(target) || panel.floating.value?.contains(target)) {
+      return true;
+    }
+    return [...children].some((child) => child.contains(target));
+  },
+  hasOpenChild: () => [...children].some((child) => child.isOpen.value || child.hasOpenChild()),
+  registerChild: (child) => {
+    children.add(child);
+    return () => children.delete(child);
+  },
+};
+
+// A container nested inside another one (e.g. a submenu in a panel) is treated as part of it:
+// clicks inside it are not "outside" for the parent, and Escape closes the innermost first.
+const parent = inject(sbFloatingContextKey, null);
+if (parent) onScopeDispose(parent.registerChild(context));
+
+provide(sbFloatingContextKey, context);
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Escape' || !props.closeOnEscape || context.hasOpenChild()) return;
+  // Every open container listens on document: only the innermost one handles the event
+  if (handledEscapes.has(event)) return;
+  handledEscapes.add(event);
+  close();
+};
+
+const onPointerdown = (event: PointerEvent) => {
+  if (!props.closeOnClickOutside) return;
+  if (!context.contains(event.composedPath()[0] ?? event.target)) close();
+};
+
+// Document listeners only while the panel is open
+watch(
+  isOpen,
+  (value, _previous, onCleanup) => {
+    if (!value || typeof document === 'undefined') return;
+    document.addEventListener('keydown', onKeydown);
+    document.addEventListener('pointerdown', onPointerdown, true);
+    onCleanup(() => {
+      document.removeEventListener('keydown', onKeydown);
+      document.removeEventListener('pointerdown', onPointerdown, true);
+    });
+  },
+  { immediate: true }
+);
+
+watch(isOpen, (value) => (value ? emit('open') : emit('close')));
+
+watch(
+  () => props.disabled,
+  (disabled) => {
+    if (disabled && model.value) model.value = false;
+  }
+);
+
+defineExpose<SbContainerExposed>({ open, close, toggle, update: panel.update });
 </script>
 
 <template>
-  <!-- The container serves as a slot boundary and context provider -->
-  <div class="floating-container">
-    <slot v-bind="context"></slot>
-  </div>
+  <slot
+    :is-open="isOpen"
+    :open="open"
+    :close="close"
+    :toggle="toggle"
+    :placement="panel.placement.value"
+    :side="panel.side.value"
+  ></slot>
 </template>
-
-<style lang="css" scoped>
-.floating-container {
-  width: fit-content;
-  height: fit-content;
-}
-</style>

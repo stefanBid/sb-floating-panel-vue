@@ -8,7 +8,7 @@ const prettierPlugin = require('eslint-plugin-prettier')
 module.exports = [
   // Ignore generated and dependency folders
   {
-    ignores: ['node_modules/**', 'dist/**', 'types/**']
+    ignores: ['node_modules/**', 'dist/**', 'types/**', 'coverage/**']
   },
 
   // TypeScript support

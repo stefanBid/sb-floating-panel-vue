@@ -1,23 +1,22 @@
 {
   "name": "sb-floating-panel-vue",
   "version": "2.0.1",
-  "description": "A flexible and lightweight Vue 3 floating panel system powered by @floating-ui/vue — includes composable hooks and plug-and-play components with arrow and resize support.",
+  "description": "Headless Vue 3 floating panel components (dropdowns, popovers, menus) powered by @floating-ui/vue: positioning, accessibility and open state handled, zero CSS shipped.",
   "keywords": [
     "vue",
     "vue3",
     "floating-ui",
     "floating panel",
-    "tooltip",
     "popover",
     "dropdown",
+    "menu",
     "floating",
     "positioning",
-    "arrow",
+    "headless",
+    "unstyled",
     "teleport",
-    "resize",
-    "resize-observer",
+    "accessibility",
     "vue-components",
-    "composable",
     "vue-library"
   ],
   "author": {
@@ -41,32 +40,19 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/sb-floating-panel.es.js",
       "require": "./dist/sb-floating-panel.umd.js"
-    },
-    "./style.css": {
-      "default": "./dist/sb-floating-panel-vue.css"
-    }
-  },
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ]
     }
   },
   "files": [
     "dist"
   ],
-  "sideEffects": [
-    "**/*.css"
-  ],
-  "engines": {
-    "node": ">=24.19.0"
-  },
+  "sideEffects": false,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "check": "vue-tsc --noEmit && vue-tsc --noEmit -p tsconfig.playground.json"
+    "check": "vue-tsc --noEmit && vue-tsc --noEmit -p tsconfig.playground.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
     "@floating-ui/vue": "^2.0.1",
@@ -78,14 +64,18 @@
     "@typescript-eslint/eslint-plugin": "^8.71.2",
     "@typescript-eslint/parser": "^8.71.2",
     "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/coverage-v8": "^5.0.5",
     "@vue/language-core": "^3.3.13",
+    "@vue/test-utils": "^2.5.1",
     "eslint": "^10.13.0",
     "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-vue": "^10.11.1",
+    "happy-dom": "^21.0.3",
     "prettier": "^3.9.10",
     "typescript": "^6.0.3",
     "vite": "^8.3.4",
     "vite-plugin-dts": "^5.1.2",
+    "vitest": "^5.0.5",
     "vue": "^3.5.44",
     "vue-eslint-parser": "10.4.1",
     "vue-tsc": "^3.3.13"

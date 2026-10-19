@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-10-18",
+  "updatedAt": "2026-10-19",
   "links": [
     {
       "url": "https://vuejs.org/api/sfc-script-setup.html",
@@ -191,17 +191,6 @@
       "verifiedAt": null
     },
     {
-      "url": "https://floating-ui.com/docs/arrow",
-      "title": "Arrow",
-      "topic": "arrow",
-      "package": "@floating-ui/vue",
-      "version": "2",
-      "summary": null,
-      "source": "proposed",
-      "usedBy": [],
-      "verifiedAt": null
-    },
-    {
       "url": "https://github.com/qmhc/unplugin-dts#readme",
       "title": "Options",
       "topic": "readme",
@@ -213,6 +202,83 @@
         "sb-health:build"
       ],
       "verifiedAt": null
+    },
+    {
+      "url": "https://vitest.dev/guide/",
+      "title": "Getting started",
+      "topic": "guide",
+      "package": "vitest",
+      "version": "5",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://vitest.dev/config/",
+      "title": "Configuring Vitest",
+      "topic": "config",
+      "package": "vitest",
+      "version": "5",
+      "summary": null,
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": null
+    },
+    {
+      "url": "https://floating-ui.com/docs/flip",
+      "title": "flip",
+      "topic": "flip",
+      "package": "@floating-ui/vue",
+      "version": "2",
+      "summary": "covers flip() options, combining with shift() (order by aligned placement, crossAxis: alignment, fallbackAxisSideDirection), difference from autoPlacement; documents @floating-ui/dom latest, re-exported by @floating-ui/vue 2",
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": "2026-10-19"
+    },
+    {
+      "url": "https://floating-ui.com/docs/shift",
+      "title": "shift",
+      "topic": "shift",
+      "package": "@floating-ui/vue",
+      "version": "2",
+      "summary": "covers shift() mainAxis/crossAxis options, limiter with limitShift(), returned x/y data; documents @floating-ui/dom latest",
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": "2026-10-19"
+    },
+    {
+      "url": "https://floating-ui.com/docs/size",
+      "title": "size",
+      "topic": "size",
+      "package": "@floating-ui/vue",
+      "version": "2",
+      "summary": "covers size() apply() with availableWidth/availableHeight (can be negative, clamp to 0), order after flip() with bestFit and before it with initialPlacement, same padding as flip; documents @floating-ui/dom latest",
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": "2026-10-19"
+    },
+    {
+      "url": "https://floating-ui.com/docs/hide",
+      "title": "hide",
+      "topic": "hide",
+      "package": "@floating-ui/vue",
+      "version": "2",
+      "summary": "covers hide() referenceHidden/escaped strategies, placement at the end of the middleware array, visibility from middlewareData.hide; documents @floating-ui/dom latest",
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": "2026-10-19"
+    },
+    {
+      "url": "https://test-utils.vuejs.org/guide/",
+      "title": "Vue Test Utils guide",
+      "topic": "guide",
+      "package": "@vue/test-utils",
+      "version": "2",
+      "summary": "covers mounting, emitted events, slots, async behavior, transitions, teleport, v-model, stubs; Vue Test Utils v2 for Vue 3",
+      "source": "proposed",
+      "usedBy": [],
+      "verifiedAt": "2026-10-19"
     }
   ]
 }
