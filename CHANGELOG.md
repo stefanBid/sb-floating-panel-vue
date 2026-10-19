@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [4.0.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v3.0.0...v4.0.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* keyboard, ARIA and dismissal hardening ([#17](https://github.com/stefanBid/sb-floating-panel-vue/issues/17))
+
+### Features
+
+* keyboard, ARIA and dismissal hardening ([#17](https://github.com/stefanBid/sb-floating-panel-vue/issues/17)) ([81d84ab](https://github.com/stefanBid/sb-floating-panel-vue/commit/81d84ab275631adea3ab0aa7551349ec62f0073e))
+
 ## [3.0.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v2.0.1...v3.0.0) (2026-10-19)
 
 
