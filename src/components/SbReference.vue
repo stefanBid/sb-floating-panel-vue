@@ -1,54 +1,49 @@
 <script setup lang="ts">
-import { computed, Ref } from 'vue';
-
-/**
- * Props for the SbReference component.
- * Renders the reference element for the floating panel system.
- */
-interface SbReferenceProps {
-  /**
-   * The ref to bind to the reference DOM element.
-   */
-  referenceRef: Ref<HTMLElement | null>;
-
-  /**
-   * HTML tag to render as the reference.
-   * Useful for accessibility and customization.
-   * @default 'button'
-   */
-  as?: 'button' | 'a' | 'div' | 'span';
-
-  /**
-   * Optional click handler for toggling the floating panel.
-   */
-  onClick?: () => void;
-}
+import { computed } from 'vue';
+import { useSbFloatingContext } from '../context';
+import type { SbReferenceProps } from '../types';
 
 const props = withDefaults(defineProps<SbReferenceProps>(), {
   as: 'button',
-  onClick: undefined,
+  ariaHaspopup: 'dialog',
 });
 
-/**
- * Determines whether the element is considered interactive
- * (to enable keyboard accessibility via keydown events).
- */
-const isInteractive = computed(() => {
-  return props.as === 'button' || props.as === 'a';
-});
+const context = useSbFloatingContext('SbReference');
+const { isOpen, disabled, floatingId } = context;
+
+// `button` and `a` are already focusable and keyboard-operable
+const isNative = computed(() => props.as === 'button' || props.as === 'a');
+
+const setReference = (el: unknown) => {
+  context.reference.value = el instanceof HTMLElement ? el : null;
+};
+
+const onClick = () => {
+  if (context.trigger.value === 'click') context.toggle();
+};
+
+const onKeydown = (event: KeyboardEvent) => {
+  if (isNative.value || (event.key !== 'Enter' && event.key !== ' ')) return;
+  event.preventDefault();
+  onClick();
+};
 </script>
 
 <template>
-  <!-- Dynamic tag based on 'as' prop -->
   <component
     :is="props.as"
-    v-bind="$attrs"
-    :ref="props.referenceRef"
-    :role="isInteractive ? 'button' : undefined"
-    :tabindex="isInteractive ? 0 : undefined"
-    @click.stop="props.onClick?.()"
-    @keydown.space.prevent.stop="isInteractive && props.onClick?.()"
-    @keydown.enter.prevent.stop="isInteractive && props.onClick?.()"
+    :ref="setReference"
+    :type="props.as === 'button' ? 'button' : undefined"
+    :role="isNative ? undefined : 'button'"
+    :tabindex="isNative ? undefined : disabled ? -1 : 0"
+    :disabled="props.as === 'button' && disabled ? true : undefined"
+    :aria-disabled="!isNative && disabled ? 'true' : undefined"
+    :aria-haspopup="props.ariaHaspopup"
+    :aria-expanded="isOpen ? 'true' : 'false'"
+    :aria-controls="isOpen ? floatingId : undefined"
+    :data-sbf-state="isOpen ? 'open' : 'closed'"
+    @click="onClick"
+    @keydown="onKeydown"
   >
     <slot></slot>
   </component>
