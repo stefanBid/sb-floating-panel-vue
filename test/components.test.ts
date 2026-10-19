@@ -220,9 +220,30 @@ describe('SbFloating', () => {
     await click(trigger());
     // Still mounted while leaving, then removed together with its wrapper
     expect(panel()!.classList.contains('pop-leave-active')).toBe(true);
+    expect(panel()!.dataset.sbfState).toBe('closed');
     await vi.waitFor(() => expect(panel()).toBeNull());
     expect(document.body.querySelectorAll('body > div:not([data-v-app])')).toHaveLength(0);
     expect(wrapper.findComponent(SbFloating).emitted('after-leave')).toHaveLength(1);
+  });
+
+  it('accepts Transition props, e.g. utility classes', async () => {
+    mountPanel(
+      {},
+      { floatingProps: { transition: { enterActiveClass: 'ease-out', leaveToClass: 'opacity-0' } } }
+    );
+    await click(trigger());
+    expect(panel()!.classList.contains('ease-out')).toBe(true);
+
+    await click(trigger());
+    expect(panel()!.dataset.sbfState).toBe('closed');
+    await vi.waitFor(() => expect(panel()).toBeNull());
+  });
+
+  it('exposes the transform origin facing the reference', async () => {
+    mountPanel({ defaultOpen: true, placement: 'top-end' });
+    await flushPromises();
+    const wrapper = panel()!.parentElement!;
+    expect(wrapper.style.getPropertyValue('--sbf-transform-origin')).toBe('100% 100%');
   });
 
   it('renders the panel without any stylesheet', () => {

@@ -1,4 +1,4 @@
-import type { Component } from 'vue';
+import type { Component, TransitionProps } from 'vue';
 
 /** Side of the reference the panel is placed on. */
 export type SbSide = 'top' | 'right' | 'bottom' | 'left';
@@ -123,6 +123,8 @@ export interface SbContainerSlotProps {
   placement: SbPlacement;
   /** Side of the resolved placement. */
   side: SbSide;
+  /** Alignment of the resolved placement, `undefined` when centered. */
+  align: SbAlignment | undefined;
 }
 
 /**
@@ -189,10 +191,16 @@ export interface SbFloatingProps {
   role?: string | null;
 
   /**
-   * Name of a Vue `<Transition>` defined by your CSS (`<name>-enter-active`, …).
-   * The classes are applied to the panel element. No animation when unset.
+   * Animation of the panel, through a Vue `<Transition>` on the panel element.
+   * - A name: the classes of your CSS (`<name>-enter-active`, …).
+   * - An object of `<Transition>` props: e.g. `enterActiveClass`, `leaveToClass` with
+   *   Tailwind utilities, or JavaScript hooks.
+   *
+   * With any transition, Vue also waits for CSS animations keyed on
+   * `data-sbf-state="closed"`, set on the panel when it starts leaving.
+   * No animation when unset.
    */
-  transition?: string;
+  transition?: string | TransitionProps;
 
   /**
    * Teleport target (CSS selector or element).

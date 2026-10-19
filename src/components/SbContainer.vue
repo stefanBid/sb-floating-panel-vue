@@ -182,5 +182,6 @@ defineExpose<SbContainerExposed>({ open, close, toggle, update: panel.update });
     :toggle="toggle"
     :placement="panel.placement.value"
     :side="panel.side.value"
+    :align="panel.align.value"
   ></slot>
 </template>

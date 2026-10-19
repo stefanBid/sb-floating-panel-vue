@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useAttrs, watch, watchEffect, type CSSProperties } from 'vue';
+import {
+  computed,
+  nextTick,
+  ref,
+  useAttrs,
+  watch,
+  watchEffect,
+  type CSSProperties,
+  type TransitionProps,
+} from 'vue';
 import { useSbFloatingContext } from '../context';
 import { FOCUS_GUARD_ATTRIBUTE, getNextTabbable, getTabbables } from '../focus';
 import type { SbFloatingProps } from '../types';
@@ -66,6 +75,18 @@ const guardAttrs = {
   tabindex: 0,
   style: { position: 'fixed', opacity: 0, outline: 'none', pointerEvents: 'none' },
 } as const;
+
+// A name uses the classes of your CSS, an object passes classes (e.g. Tailwind) or hooks.
+// Without it nothing is animated and the panel is removed at once.
+const transitionProps = computed<TransitionProps>(() => {
+  const { transition } = props;
+  if (!transition) return { css: false };
+  return typeof transition === 'string' ? { name: transition } : transition;
+});
+
+// The leaving panel is no longer patched by Vue: mark it here, so CSS keyed on
+// `data-sbf-state="closed"` (e.g. an exit animation) applies while it animates out
+const onBeforeLeave = (el: Element) => el.setAttribute('data-sbf-state', 'closed');
 
 const onAfterEnter = () => emit('after-enter');
 
@@ -141,9 +162,9 @@ watch(
     <div v-if="isMounted" :ref="setFloating" :style="wrapperStyle">
       <span v-if="hasFocusGuards" v-bind="guardAttrs" @focus="onStartGuardFocus"></span>
       <Transition
-        :name="props.transition"
-        :css="!!props.transition"
+        v-bind="transitionProps"
         appear
+        @before-leave="onBeforeLeave"
         @after-enter="onAfterEnter"
         @after-leave="onAfterLeave"
       >
@@ -155,7 +176,7 @@ watch(
           :ref="setPanel"
           :role="props.role ?? undefined"
           :tabindex="props.autoFocus ? -1 : undefined"
-          :data-sbf-state="isOpen ? 'open' : 'closed'"
+          data-sbf-state="open"
           :data-sbf-side="side"
           :data-sbf-align="align"
         >
