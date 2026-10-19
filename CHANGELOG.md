@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v2.0.1...v3.0.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* `useSbFloatingPanel` is no longer exported; the arrow and `sb-floating-panel-vue/style.css` are removed; `offsetValue` is now `offset` (default 8), `hasResize` is now `matchWidth`, `animation`/`duration` are replaced by `transition`; `SbReference` and `SbFloating` no longer take refs or styles as props. See "Migrating from v2" in the README.
+
+### Features
+
+* restructure sb-floating-panel-vue for v3.0.0 ([#15](https://github.com/stefanBid/sb-floating-panel-vue/issues/15)) ([58b7226](https://github.com/stefanBid/sb-floating-panel-vue/commit/58b72268b5468079b3a1d5cc0e92f89809932185))
+
 ## [2.0.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v2.0.0...v2.0.1) (2026-10-18)
 
 
