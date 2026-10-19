@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, useId, watchEffect } from 'vue';
+import { computed, onBeforeUnmount, useAttrs, useId, watchEffect } from 'vue';
 import { useSbFloatingContext } from '../context';
 import { getTabbables } from '../focus';
 import type { SbReferenceProps } from '../types';
@@ -10,11 +10,14 @@ const props = withDefaults(defineProps<SbReferenceProps>(), {
   ariaHaspopup: undefined,
 });
 
+const attrs = useAttrs();
 const context = useSbFloatingContext('SbReference');
 const { isOpen, disabled, floatingId, floatingRole } = context;
 
-// `button` and `a` are already focusable and keyboard-operable
-const isNative = computed(() => props.as === 'button' || props.as === 'a');
+// `button`, `a` with `href` and components (which render their own interactive element)
+// are already focusable and keyboard-operable. A function, so it follows `href` in `attrs`.
+const isNative = () =>
+  typeof props.as !== 'string' || props.as === 'button' || (props.as === 'a' && attrs.href != null);
 
 const fallbackId = `${useId()}-reference`;
 const id = computed(() => props.id ?? fallbackId);
@@ -41,7 +44,9 @@ const ariaHaspopup = computed(
 );
 
 const setReference = (el: unknown) => {
-  context.reference.value = el instanceof HTMLElement ? el : null;
+  // A component gives its instance: the reference is its root element
+  const node = el && typeof el === 'object' && '$el' in el ? el.$el : el;
+  context.reference.value = node instanceof HTMLElement ? node : null;
 };
 
 const onClick = () => {
@@ -62,7 +67,7 @@ const onKeydown = (event: KeyboardEvent) => {
     focusPanel(event);
     return;
   }
-  if (isNative.value || (event.key !== 'Enter' && event.key !== ' ')) return;
+  if (isNative() || (event.key !== 'Enter' && event.key !== ' ')) return;
   event.preventDefault();
   onClick();
 };
@@ -74,10 +79,10 @@ const onKeydown = (event: KeyboardEvent) => {
     :id="id"
     :ref="setReference"
     :type="props.as === 'button' ? 'button' : undefined"
-    :role="isNative ? undefined : 'button'"
-    :tabindex="isNative ? undefined : disabled ? -1 : 0"
+    :role="isNative() ? undefined : 'button'"
+    :tabindex="isNative() ? undefined : disabled ? -1 : 0"
     :disabled="props.as === 'button' && disabled ? true : undefined"
-    :aria-disabled="!isNative && disabled ? 'true' : undefined"
+    :aria-disabled="props.as !== 'button' && disabled ? 'true' : undefined"
     :aria-haspopup="ariaHaspopup"
     :aria-expanded="isOpen ? 'true' : 'false'"
     :aria-controls="isOpen ? floatingId : undefined"

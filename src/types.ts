@@ -1,3 +1,5 @@
+import type { Component } from 'vue';
+
 /** Side of the reference the panel is placed on. */
 export type SbSide = 'top' | 'right' | 'bottom' | 'left';
 
@@ -142,11 +144,17 @@ export interface SbContainerExposed {
  */
 export interface SbReferenceProps {
   /**
-   * HTML tag to render. A `button` gets `type="button"`; any tag other than `button` and `a`
-   * gets `role="button"`, `tabindex="0"` and Enter/Space handling.
+   * HTML tag or component to render.
+   * - `button` gets `type="button"`.
+   * - `a` with `href` and components are left as they are: a component is expected to render
+   *   its own focusable element (e.g. the `<Button>` of your design system).
+   * - Any other tag (including `a` without `href`) gets `role="button"`, `tabindex="0"` and
+   *   Enter/Space handling.
+   *
+   * When disabled, `button` gets `disabled`; anything else gets `aria-disabled="true"`.
    * @default 'button'
    */
-  as?: string;
+  as?: string | Component;
 
   /**
    * `id` of the element. The panel is named after the reference with `aria-labelledby`.

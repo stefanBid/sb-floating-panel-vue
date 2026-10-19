@@ -1,6 +1,6 @@
 import { config, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { h, nextTick, type VNodeChild } from 'vue';
+import { defineComponent, h, nextTick, type VNodeChild } from 'vue';
 import { SbContainer, SbFloating, SbReference } from '../src';
 import type { SbContainerProps, SbContainerSlotProps } from '../src';
 
@@ -83,6 +83,39 @@ describe('SbReference', () => {
     expect(panel()).not.toBeNull();
     await keydown(trigger(), ' ');
     expect(panel()).toBeNull();
+  });
+
+  it('treats an a without href as a non-interactive tag', async () => {
+    const wrapper = mountPanel({}, { referenceProps: { as: 'a' } });
+    expect(trigger().getAttribute('role')).toBe('button');
+    expect(trigger().getAttribute('tabindex')).toBe('0');
+    await keydown(trigger(), 'Enter');
+    expect(panel()).not.toBeNull();
+    wrapper.unmount();
+
+    mountPanel({ disabled: true }, { referenceProps: { as: 'a', href: '#account' } });
+    expect(trigger().hasAttribute('role')).toBe(false);
+    expect(trigger().hasAttribute('tabindex')).toBe(false);
+    expect(trigger().getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('renders a component as the reference', async () => {
+    const MyButton = defineComponent({
+      setup:
+        (_, { slots }) =>
+        () =>
+          h('button', { class: 'my-button', type: 'button' }, slots.default?.()),
+    });
+    mountPanel({}, { referenceProps: { as: MyButton } });
+    const el = trigger();
+    expect(el.classList.contains('my-button')).toBe(true);
+    expect(el.hasAttribute('role')).toBe(false);
+    expect(el.hasAttribute('tabindex')).toBe(false);
+
+    await click(el);
+    expect(panel()).not.toBeNull();
+    expect(el.getAttribute('aria-expanded')).toBe('true');
+    expect(panel()!.getAttribute('aria-labelledby')).toBe(el.id);
   });
 
   it('sets ARIA and state attributes', async () => {
