@@ -49,6 +49,15 @@ export interface FloatingPanel {
 
 const px = (value: number) => `${Math.max(0, value)}px`;
 
+// Corner or edge of the panel facing the reference, as Radix computes it without an arrow
+const transformOrigin = (placement: string) => {
+  const [side, align] = placement.split('-');
+  const cross = align === 'start' ? '0%' : align === 'end' ? '100%' : '50%';
+  if (side === 'top') return `${cross} 100%`;
+  if (side === 'bottom') return `${cross} 0%`;
+  return side === 'left' ? `100% ${cross}` : `0% ${cross}`;
+};
+
 /**
  * Wraps Floating UI for the components. Not part of the public API.
  */
@@ -75,10 +84,11 @@ export function useSbFloatingPanel(options: FloatingPanelOptions): FloatingPanel
       // After flip, with the same padding (floating-ui.com/docs/size).
       size({
         padding,
-        apply({ rects, elements, availableWidth, availableHeight }) {
+        apply({ rects, elements, availableWidth, availableHeight, placement }) {
           const { style } = elements.floating;
           const referenceWidth = px(rects.reference.width);
           style.setProperty('--sbf-reference-width', referenceWidth);
+          style.setProperty('--sbf-transform-origin', transformOrigin(placement));
           style.setProperty('--sbf-available-width', px(availableWidth));
           style.setProperty('--sbf-available-height', px(availableHeight));
           style.width = matchWidth === true ? referenceWidth : '';

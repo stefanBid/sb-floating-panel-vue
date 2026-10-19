@@ -21,6 +21,27 @@ const placements: SbPlacement[] = [
 const menuItems = ['Profile', 'Settings', 'Sign out'];
 const lastAction = ref('none');
 
+// The library leaves the keyboard model of role="menu" to you: arrow keys, Home and End
+const onMenuKeydown = (event: KeyboardEvent) => {
+  const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
+  if (!keys.includes(event.key)) return;
+  const menu = event.currentTarget as HTMLElement;
+  // Only the items of this menu, not those of a nested submenu
+  const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')].filter(
+    (item) => item.closest('[role="menu"]') === menu
+  );
+  const index = items.indexOf(document.activeElement as HTMLElement);
+  const last = items.length - 1;
+  const next = {
+    ArrowDown: index < last ? index + 1 : 0,
+    ArrowUp: index > 0 ? index - 1 : last,
+    Home: 0,
+    End: last,
+  }[event.key]!;
+  event.preventDefault();
+  items[next]?.focus();
+};
+
 // Popover controlled with v-model:open
 const popoverOpen = ref(false);
 const feedback = ref('');
@@ -47,17 +68,19 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
     <section class="card">
       <h2>Dropdown menu</h2>
       <p>
-        <code>matchWidth="min"</code>, <code>role="menu"</code>, <code>pop</code> transition, the
-        chevron rotates with <code>data-sbf-state</code>.
+        <code>matchWidth="min"</code>, <code>role="menu"</code> (the trigger gets
+        <code>aria-haspopup="menu"</code> from it), <code>pop</code> transition, the chevron rotates
+        with <code>data-sbf-state</code>. Focus moves to the first item; the arrow keys, Home and
+        End are handled here, in the playground.
       </p>
       <SbContainer placement="bottom-start" :offset="6" match-width="min">
         <template #default="{ close }">
-          <SbReference class="trigger trigger--wide" aria-haspopup="menu">
+          <SbReference class="trigger trigger--wide">
             Account menu <span class="chevron" aria-hidden="true">▾</span>
           </SbReference>
-          <SbFloating role="menu" transition="pop" class="panel">
-            <ul class="menu">
-              <li v-for="item in menuItems" :key="item">
+          <SbFloating role="menu" transition="pop" class="panel" @keydown="onMenuKeydown">
+            <ul class="menu" role="none">
+              <li v-for="item in menuItems" :key="item" role="none">
                 <button
                   type="button"
                   role="menuitem"
@@ -79,13 +102,13 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
     <section class="card">
       <h2>Popover with a form</h2>
       <p>
-        <code>v-model:open</code> and <code>auto-focus</code>: focus moves to the textarea once the
-        panel is positioned and goes back to the trigger on Escape.
+        <code>v-model:open</code>. Focus moves to the textarea once the panel is positioned and goes
+        back to the trigger on Escape; Tab past the button moves on to the page and closes it.
       </p>
       <SbContainer v-model:open="popoverOpen" placement="right-start">
         <template #default="{ close }">
           <SbReference class="trigger">Send feedback</SbReference>
-          <SbFloating auto-focus transition="pop" class="panel panel--padded panel--form">
+          <SbFloating transition="pop" class="panel panel--padded panel--form">
             <form
               @submit.prevent="
                 feedback = '';
@@ -111,14 +134,14 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
       <h2>Tooltip</h2>
       <p>
         <code>trigger="manual"</code>: the panel opens from the slot functions, here on hover and
-        focus.
+        focus. <code>role="tooltip"</code> with <code>:auto-focus="false"</code>, and the trigger is
+        described by the tooltip text through <code>aria-describedby</code>.
       </p>
       <SbContainer placement="top" trigger="manual" :offset="6">
         <template #default="{ open, close }">
           <SbReference
-            as="span"
             class="trigger trigger--text"
-            aria-haspopup="false"
+            aria-describedby="tooltip-text"
             @mouseenter="open()"
             @mouseleave="close()"
             @focus="open()"
@@ -126,7 +149,9 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
           >
             Hover or focus me
           </SbReference>
-          <SbFloating role="tooltip" transition="pop" class="tooltip">Tooltip text</SbFloating>
+          <SbFloating role="tooltip" :auto-focus="false" transition="pop" class="tooltip">
+            <span id="tooltip-text">Tooltip text</span>
+          </SbFloating>
         </template>
       </SbContainer>
     </section>
@@ -225,19 +250,17 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
         closes the innermost first.
       </p>
       <SbContainer>
-        <SbReference class="trigger" aria-haspopup="menu">File</SbReference>
-        <SbFloating role="menu" transition="pop" class="panel">
-          <ul class="menu">
-            <li><button type="button" role="menuitem">New</button></li>
-            <li>
+        <SbReference class="trigger">File</SbReference>
+        <SbFloating role="menu" transition="pop" class="panel" @keydown="onMenuKeydown">
+          <ul class="menu" role="none">
+            <li role="none"><button type="button" role="menuitem">New</button></li>
+            <li role="none">
               <SbContainer placement="right-start" :offset="4">
-                <SbReference class="menu__sub" role="menuitem" aria-haspopup="menu">
-                  Open recent ▸
-                </SbReference>
-                <SbFloating role="menu" transition="pop" class="panel">
-                  <ul class="menu">
-                    <li><button type="button" role="menuitem">notes.md</button></li>
-                    <li><button type="button" role="menuitem">todo.md</button></li>
+                <SbReference class="menu__sub" role="menuitem">Open recent ▸</SbReference>
+                <SbFloating role="menu" transition="pop" class="panel" @keydown="onMenuKeydown">
+                  <ul class="menu" role="none">
+                    <li role="none"><button type="button" role="menuitem">notes.md</button></li>
+                    <li role="none"><button type="button" role="menuitem">todo.md</button></li>
                   </ul>
                 </SbFloating>
               </SbContainer>

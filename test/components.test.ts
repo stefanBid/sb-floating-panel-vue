@@ -1,6 +1,6 @@
 import { config, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { h, nextTick, type VNodeChild } from 'vue';
+import { defineComponent, h, nextTick, type VNodeChild } from 'vue';
 import { SbContainer, SbFloating, SbReference } from '../src';
 import type { SbContainerProps, SbContainerSlotProps } from '../src';
 
@@ -12,6 +12,7 @@ interface MountOptions {
   referenceProps?: Record<string, unknown>;
   floatingProps?: Record<string, unknown>;
   content?: (slot: SbContainerSlotProps) => VNodeChild;
+  attachTo?: HTMLElement;
 }
 
 function mountPanel(
@@ -20,7 +21,7 @@ function mountPanel(
 ) {
   return mount(SbContainer, {
     props,
-    attachTo: document.body,
+    attachTo: options.attachTo ?? document.body,
     slots: {
       default: (slot: SbContainerSlotProps) => [
         h(SbReference, options.referenceProps ?? {}, () => 'Trigger'),
@@ -32,7 +33,7 @@ function mountPanel(
   });
 }
 
-const trigger = () => document.querySelector<HTMLElement>('[aria-haspopup]')!;
+const trigger = () => document.querySelector<HTMLElement>('[aria-expanded]')!;
 const panel = () => document.querySelector<HTMLElement>('[role="dialog"]');
 
 const click = async (el: Element) => {
@@ -41,8 +42,25 @@ const click = async (el: Element) => {
   await nextTick();
 };
 
-const keydown = async (el: Element | Document, key: string) => {
-  el.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+const keydown = async (el: Element | Document, key: string, init: KeyboardEventInit = {}) => {
+  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
+  el.dispatchEvent(event);
+  await nextTick();
+  return event;
+};
+
+// Opens the panel and waits for the position, after which focus moves inside
+const openAndSettle = async () => {
+  await click(trigger());
+  await flushPromises();
+  await nextTick();
+};
+
+const guards = () => document.querySelectorAll<HTMLElement>('[data-sbf-focus-guard]');
+
+// What the browser does when Tab lands on a focus guard
+const tabOnto = async (guard: HTMLElement, from: Element) => {
+  guard.dispatchEvent(new FocusEvent('focus', { relatedTarget: from }));
   await nextTick();
 };
 
@@ -65,6 +83,39 @@ describe('SbReference', () => {
     expect(panel()).not.toBeNull();
     await keydown(trigger(), ' ');
     expect(panel()).toBeNull();
+  });
+
+  it('treats an a without href as a non-interactive tag', async () => {
+    const wrapper = mountPanel({}, { referenceProps: { as: 'a' } });
+    expect(trigger().getAttribute('role')).toBe('button');
+    expect(trigger().getAttribute('tabindex')).toBe('0');
+    await keydown(trigger(), 'Enter');
+    expect(panel()).not.toBeNull();
+    wrapper.unmount();
+
+    mountPanel({ disabled: true }, { referenceProps: { as: 'a', href: '#account' } });
+    expect(trigger().hasAttribute('role')).toBe(false);
+    expect(trigger().hasAttribute('tabindex')).toBe(false);
+    expect(trigger().getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('renders a component as the reference', async () => {
+    const MyButton = defineComponent({
+      setup:
+        (_, { slots }) =>
+        () =>
+          h('button', { class: 'my-button', type: 'button' }, slots.default?.()),
+    });
+    mountPanel({}, { referenceProps: { as: MyButton } });
+    const el = trigger();
+    expect(el.classList.contains('my-button')).toBe(true);
+    expect(el.hasAttribute('role')).toBe(false);
+    expect(el.hasAttribute('tabindex')).toBe(false);
+
+    await click(el);
+    expect(panel()).not.toBeNull();
+    expect(el.getAttribute('aria-expanded')).toBe('true');
+    expect(panel()!.getAttribute('aria-labelledby')).toBe(el.id);
   });
 
   it('sets ARIA and state attributes', async () => {
@@ -91,6 +142,39 @@ describe('SbReference', () => {
     expect(onParentClick).toHaveBeenCalledOnce();
     expect(panel()).not.toBeNull();
     document.body.removeEventListener('click', onParentClick);
+  });
+
+  it('derives aria-haspopup from the role of the panel', async () => {
+    const cases: [string, string | null][] = [
+      ['menu', 'menu'],
+      ['alertdialog', 'dialog'],
+      ['tooltip', null],
+    ];
+    for (const [role, expected] of cases) {
+      const wrapper = mountPanel({}, { floatingProps: { role } });
+      // SbFloating is set up after SbReference has rendered: updated before the next paint
+      await nextTick();
+      expect(trigger()?.getAttribute('aria-haspopup') ?? null).toBe(expected);
+      wrapper.unmount();
+    }
+  });
+
+  it('uses the id prop as the id of the element', () => {
+    mountPanel({}, { referenceProps: { id: 'account' } });
+    expect(trigger().id).toBe('account');
+  });
+
+  it('moves focus into the open panel on Tab', async () => {
+    mountPanel({}, { floatingProps: { autoFocus: false } });
+    await openAndSettle();
+    trigger().focus();
+
+    const event = await keydown(trigger(), 'Tab');
+    expect(event.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(document.querySelector('.inside'));
+
+    const shiftTab = await keydown(trigger(), 'Tab', { shiftKey: true });
+    expect(shiftTab.defaultPrevented).toBe(false);
   });
 });
 
@@ -136,9 +220,30 @@ describe('SbFloating', () => {
     await click(trigger());
     // Still mounted while leaving, then removed together with its wrapper
     expect(panel()!.classList.contains('pop-leave-active')).toBe(true);
+    expect(panel()!.dataset.sbfState).toBe('closed');
     await vi.waitFor(() => expect(panel()).toBeNull());
     expect(document.body.querySelectorAll('body > div:not([data-v-app])')).toHaveLength(0);
     expect(wrapper.findComponent(SbFloating).emitted('after-leave')).toHaveLength(1);
+  });
+
+  it('accepts Transition props, e.g. utility classes', async () => {
+    mountPanel(
+      {},
+      { floatingProps: { transition: { enterActiveClass: 'ease-out', leaveToClass: 'opacity-0' } } }
+    );
+    await click(trigger());
+    expect(panel()!.classList.contains('ease-out')).toBe(true);
+
+    await click(trigger());
+    expect(panel()!.dataset.sbfState).toBe('closed');
+    await vi.waitFor(() => expect(panel()).toBeNull());
+  });
+
+  it('exposes the transform origin facing the reference', async () => {
+    mountPanel({ defaultOpen: true, placement: 'top-end' });
+    await flushPromises();
+    const wrapper = panel()!.parentElement!;
+    expect(wrapper.style.getPropertyValue('--sbf-transform-origin')).toBe('100% 100%');
   });
 
   it('renders the panel without any stylesheet', () => {
@@ -149,6 +254,98 @@ describe('SbFloating', () => {
   it('throws outside SbContainer', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(() => mount(SbFloating)).toThrow('<SbFloating> must be used inside <SbContainer>');
+  });
+
+  it('is named after the reference unless the user names it', async () => {
+    const wrapper = mountPanel({ defaultOpen: true });
+    await nextTick();
+    expect(trigger().id).toMatch(/-reference$/);
+    expect(panel()!.getAttribute('aria-labelledby')).toBe(trigger().id);
+    wrapper.unmount();
+
+    mountPanel({ defaultOpen: true }, { floatingProps: { 'aria-label': 'Account' } });
+    await nextTick();
+    expect(panel()!.hasAttribute('aria-labelledby')).toBe(false);
+    expect(panel()!.getAttribute('aria-label')).toBe('Account');
+  });
+
+  it('names only popup roles after the reference', async () => {
+    mountPanel({ defaultOpen: true }, { floatingProps: { role: 'tooltip' } });
+    await nextTick();
+    expect(document.querySelector('[role="tooltip"]')!.hasAttribute('aria-labelledby')).toBe(false);
+  });
+
+  it('keeps an aria-labelledby passed by the user', async () => {
+    mountPanel({ defaultOpen: true }, { floatingProps: { 'aria-labelledby': 'title' } });
+    await nextTick();
+    expect(panel()!.getAttribute('aria-labelledby')).toBe('title');
+  });
+
+  it('renders no role, name or aria-haspopup with role null', async () => {
+    mountPanel({ defaultOpen: true }, { floatingProps: { role: null, class: 'disclosure' } });
+    await nextTick();
+    const el = document.querySelector('.disclosure')!;
+    expect(el.hasAttribute('role')).toBe(false);
+    expect(el.hasAttribute('aria-labelledby')).toBe(false);
+    expect(trigger().hasAttribute('aria-haspopup')).toBe(false);
+  });
+
+  it('moves focus inside by default, not with autoFocus false', async () => {
+    const wrapper = mountPanel();
+    trigger().focus();
+    await openAndSettle();
+    expect(document.activeElement).toBe(document.querySelector('.inside'));
+    wrapper.unmount();
+
+    mountPanel({}, { floatingProps: { autoFocus: false } });
+    trigger().focus();
+    await openAndSettle();
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  it('keeps the Tab order of the teleported panel with focus guards', async () => {
+    const host = document.createElement('div');
+    const after = document.createElement('button');
+    after.className = 'after';
+    document.body.append(host, after);
+    mountPanel(
+      {},
+      {
+        attachTo: host,
+        content: () => [
+          h('button', { class: 'first' }, 'First'),
+          h('button', { class: 'last' }, 'Last'),
+        ],
+      }
+    );
+    await openAndSettle();
+    const [start, end] = guards();
+    const first = document.querySelector('.first')!;
+    const last = document.querySelector('.last')!;
+    expect(start!.nextElementSibling).toBe(panel());
+    expect(end!.previousElementSibling).toBe(panel());
+
+    // Shift+Tab from the first element goes back to the reference, the panel stays open
+    await tabOnto(start!, first);
+    expect(document.activeElement).toBe(trigger());
+    expect(panel()).not.toBeNull();
+
+    // Shift+Tab from what follows the panel in the DOM enters it from the end
+    await tabOnto(end!, document.body);
+    expect(document.activeElement).toBe(last);
+
+    // Tab from the last element goes on after the reference and closes the panel
+    await tabOnto(end!, last);
+    expect(document.activeElement).toBe(after);
+    expect(panel()).toBeNull();
+    after.remove();
+    host.remove();
+  });
+
+  it('renders no focus guards when not teleported', async () => {
+    mountPanel({ defaultOpen: true }, { floatingProps: { teleportDisabled: true } });
+    await nextTick();
+    expect(guards()).toHaveLength(0);
   });
 
   it('moves focus inside when autoFocus is set and gives it back on close', async () => {
@@ -208,6 +405,102 @@ describe('SbContainer', () => {
     outside.remove();
   });
 
+  it('waits for the click of a tap before closing on touch', async () => {
+    const outside = document.createElement('div');
+    document.body.appendChild(outside);
+    mountPanel({ defaultOpen: true });
+    await nextTick();
+    const touch = () =>
+      outside.dispatchEvent(
+        new PointerEvent('pointerdown', { bubbles: true, composed: true, pointerType: 'touch' })
+      );
+
+    // A touch that becomes a scroll fires no click
+    touch();
+    await nextTick();
+    expect(panel()).not.toBeNull();
+
+    touch();
+    outside.click();
+    await nextTick();
+    expect(panel()).toBeNull();
+    outside.remove();
+  });
+
+  it('leaves Escape to widgets that handle it and to IME composition', async () => {
+    mountPanel({ defaultOpen: true });
+    await nextTick();
+    const inside = document.querySelector('.inside')!;
+    inside.addEventListener('keydown', (event) => event.preventDefault(), { once: true });
+
+    await keydown(inside, 'Escape');
+    expect(panel()).not.toBeNull();
+    await keydown(document, 'Escape', { isComposing: true });
+    expect(panel()).not.toBeNull();
+
+    const event = await keydown(document, 'Escape');
+    expect(event.defaultPrevented).toBe(true);
+    expect(panel()).toBeNull();
+  });
+
+  it('closes the most recently opened of two sibling containers on Escape', async () => {
+    const first = mountPanel({ defaultOpen: true }, { floatingProps: { class: 'first' } });
+    const second = mountPanel({ defaultOpen: true }, { floatingProps: { class: 'second' } });
+    await nextTick();
+
+    await keydown(document, 'Escape');
+    expect(document.querySelector('.second')).toBeNull();
+    expect(document.querySelector('.first')).not.toBeNull();
+    first.unmount();
+    second.unmount();
+  });
+
+  it('gives focus back without scrolling, unless an outside press focuses something else', async () => {
+    const field = document.createElement('input');
+    const text = document.createElement('p');
+    document.body.append(field, text);
+    mountPanel({}, { floatingProps: { autoFocus: false } });
+    const focus = vi.spyOn(trigger(), 'focus');
+
+    // Pressing plain text: focus would be lost, so it goes back to the trigger
+    await click(trigger());
+    (document.querySelector('.inside') as HTMLElement).focus();
+    await click(text);
+    expect(panel()).toBeNull();
+    expect(focus).toHaveBeenLastCalledWith({ preventScroll: true });
+
+    // Pressing a field: the browser focuses it, the trigger is left alone
+    focus.mockClear();
+    await click(trigger());
+    (document.querySelector('.inside') as HTMLElement).focus();
+    await click(field);
+    expect(panel()).toBeNull();
+    expect(focus).not.toHaveBeenCalled();
+    field.remove();
+    text.remove();
+  });
+
+  it('closes when focus moves outside unless closeOnFocusOut is false', async () => {
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    const wrapper = mountPanel({ defaultOpen: true });
+    await nextTick();
+
+    (document.querySelector('.inside') as HTMLElement).focus();
+    trigger().focus();
+    expect(panel()).not.toBeNull();
+    outside.focus();
+    await nextTick();
+    expect(panel()).toBeNull();
+
+    await wrapper.setProps({ closeOnFocusOut: false });
+    await click(trigger());
+    outside.focus();
+    await nextTick();
+    expect(panel()).not.toBeNull();
+    outside.remove();
+  });
+
   it('supports v-model:open', async () => {
     const wrapper = mountPanel({ open: false, 'onUpdate:open': () => {} });
     await click(trigger());
@@ -234,6 +527,19 @@ describe('SbContainer', () => {
     await click(trigger());
     expect(panel()).not.toBeNull();
     await wrapper.setProps({ disabled: true });
+    expect(panel()).toBeNull();
+  });
+
+  it('uses defaultOpen only as the initial state', async () => {
+    const wrapper = mountPanel({ defaultOpen: true });
+    await wrapper.setProps({ disabled: true });
+    expect(panel()).toBeNull();
+    await wrapper.setProps({ disabled: false });
+    expect(panel()).toBeNull();
+    wrapper.unmount();
+
+    const closed = mountPanel({ defaultOpen: false });
+    await closed.setProps({ defaultOpen: true });
     expect(panel()).toBeNull();
   });
 

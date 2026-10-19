@@ -1,3 +1,5 @@
+import type { Component, TransitionProps } from 'vue';
+
 /** Side of the reference the panel is placed on. */
 export type SbSide = 'top' | 'right' | 'bottom' | 'left';
 
@@ -96,6 +98,13 @@ export interface SbContainerProps {
    * @default true
    */
   closeOnClickOutside?: boolean;
+
+  /**
+   * Closes the panel when keyboard focus moves outside the reference and the panel
+   * (e.g. tabbing past the last element of the panel).
+   * @default true
+   */
+  closeOnFocusOut?: boolean;
 }
 
 /**
@@ -114,6 +123,8 @@ export interface SbContainerSlotProps {
   placement: SbPlacement;
   /** Side of the resolved placement. */
   side: SbSide;
+  /** Alignment of the resolved placement, `undefined` when centered. */
+  align: SbAlignment | undefined;
 }
 
 /**
@@ -135,15 +146,28 @@ export interface SbContainerExposed {
  */
 export interface SbReferenceProps {
   /**
-   * HTML tag to render. A `button` gets `type="button"`; any tag other than `button` and `a`
-   * gets `role="button"`, `tabindex="0"` and Enter/Space handling.
+   * HTML tag or component to render.
+   * - `button` gets `type="button"`.
+   * - `a` with `href` and components are left as they are: a component is expected to render
+   *   its own focusable element (e.g. the `<Button>` of your design system).
+   * - Any other tag (including `a` without `href`) gets `role="button"`, `tabindex="0"` and
+   *   Enter/Space handling.
+   *
+   * When disabled, `button` gets `disabled`; anything else gets `aria-disabled="true"`.
    * @default 'button'
    */
-  as?: string;
+  as?: string | Component;
 
   /**
-   * Value of `aria-haspopup`, matching the `role` of `SbFloating`.
-   * @default 'dialog'
+   * `id` of the element. The panel is named after the reference with `aria-labelledby`.
+   * @default an id generated with `useId()`
+   */
+  id?: string;
+
+  /**
+   * Value of `aria-haspopup`. When unset it follows the `role` of `SbFloating`
+   * (`dialog`, `menu`, `listbox`, `tree`, `grid`; `alertdialog` gives `dialog`)
+   * and is left out for any other role.
    */
   ariaHaspopup?: 'dialog' | 'menu' | 'listbox' | 'tree' | 'grid' | 'true' | 'false';
 }
@@ -159,16 +183,25 @@ export interface SbFloatingProps {
   as?: string;
 
   /**
-   * ARIA role of the panel.
+   * ARIA role of the panel. With a popup role (`dialog`, `alertdialog`, `menu`, `listbox`,
+   * `tree`, `grid`), the panel is named after the reference with `aria-labelledby`, unless
+   * you pass `aria-label` or `aria-labelledby` yourself.
+   * `null` renders no role (disclosure pattern).
    * @default 'dialog'
    */
-  role?: string;
+  role?: string | null;
 
   /**
-   * Name of a Vue `<Transition>` defined by your CSS (`<name>-enter-active`, …).
-   * The classes are applied to the panel element. No animation when unset.
+   * Animation of the panel, through a Vue `<Transition>` on the panel element.
+   * - A name: the classes of your CSS (`<name>-enter-active`, …).
+   * - An object of `<Transition>` props: e.g. `enterActiveClass`, `leaveToClass` with
+   *   Tailwind utilities, or JavaScript hooks.
+   *
+   * With any transition, Vue also waits for CSS animations keyed on
+   * `data-sbf-state="closed"`, set on the panel when it starts leaving.
+   * No animation when unset.
    */
-  transition?: string;
+  transition?: string | TransitionProps;
 
   /**
    * Teleport target (CSS selector or element).
@@ -190,7 +223,8 @@ export interface SbFloatingProps {
   /**
    * Moves focus inside the panel once it is positioned: to the first element with
    * `autofocus`, otherwise to the first focusable element, otherwise to the panel itself.
-   * @default false
+   * Set it to `false` for panels that must not take focus, such as tooltips.
+   * @default true
    */
   autoFocus?: boolean;
 }

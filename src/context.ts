@@ -10,16 +10,33 @@ export interface SbFloatingContext extends FloatingPanel {
   disabled: Readonly<Ref<boolean>>;
   trigger: Readonly<Ref<SbTrigger>>;
   floatingId: string;
+  /** Id of the mounted `SbReference`, used to name the panel with `aria-labelledby`. */
+  referenceId: Ref<string | undefined>;
+  /** `role` of the mounted `SbFloating`, used to derive `aria-haspopup` on the reference. */
+  floatingRole: Ref<string | null>;
+  /** Set when an outside press closes the panel on a focusable element, which keeps focus. */
+  skipFocusReturn: boolean;
   open: () => void;
   close: () => void;
   toggle: () => void;
   /** Whether an event target is inside the reference, the panel or a nested container. */
   contains: (target: EventTarget | null) => boolean;
-  /** Whether a nested container is open. */
-  hasOpenChild: () => boolean;
   /** Registers a nested container; returns the function that unregisters it. */
   registerChild: (child: SbFloatingContext) => () => void;
 }
+
+/**
+ * Panel roles that make the reference a popup trigger, with their `aria-haspopup` value.
+ * Panels with these roles are also named after the reference.
+ */
+export const POPUP_ROLES: Record<string, 'dialog' | 'menu' | 'listbox' | 'tree' | 'grid'> = {
+  dialog: 'dialog',
+  alertdialog: 'dialog',
+  menu: 'menu',
+  listbox: 'listbox',
+  tree: 'tree',
+  grid: 'grid',
+};
 
 export const sbFloatingContextKey: InjectionKey<SbFloatingContext> = Symbol('SbFloatingContext');
 
