@@ -2,7 +2,7 @@ import { config, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, type VNodeChild } from 'vue';
 import { SbContainer, SbFloating, SbReference } from '../src';
-import type { SbContainerProps, SbContainerSlotProps } from '../src';
+import type { SbContainerExposed, SbContainerProps, SbContainerSlotProps } from '../src';
 
 enableAutoUnmount(afterEach);
 // Render the real <Transition>: the stub adds an element between the wrapper and the panel
@@ -246,6 +246,23 @@ describe('SbFloating', () => {
     expect(wrapper.style.getPropertyValue('--sbf-transform-origin')).toBe('100% 100%');
   });
 
+  it('mirrors the transform origin in right-to-left text, on the top and bottom sides', async () => {
+    document.documentElement.style.direction = 'rtl';
+    const cases: [SbContainerProps['placement'], string][] = [
+      ['top-end', '0% 100%'],
+      ['bottom-start', '100% 0%'],
+      ['right-start', '0% 0%'],
+    ];
+    for (const [placement, origin] of cases) {
+      const wrapper = mountPanel({ defaultOpen: true, placement });
+      await flushPromises();
+      const floating = panel()!.parentElement!;
+      expect(floating.style.getPropertyValue('--sbf-transform-origin')).toBe(origin);
+      wrapper.unmount();
+    }
+    document.documentElement.style.direction = '';
+  });
+
   it('renders the panel without any stylesheet', () => {
     mountPanel({ defaultOpen: true });
     expect(document.querySelectorAll('style, link[rel="stylesheet"]')).toHaveLength(0);
@@ -343,7 +360,7 @@ describe('SbFloating', () => {
   });
 
   it('renders no focus guards when not teleported', async () => {
-    mountPanel({ defaultOpen: true }, { floatingProps: { teleportDisabled: true } });
+    mountPanel({ defaultOpen: true }, { floatingProps: { teleport: false } });
     await nextTick();
     expect(guards()).toHaveLength(0);
   });
@@ -587,5 +604,640 @@ describe('SbContainer', () => {
 
     await keydown(document, 'Escape');
     expect(menu()).toBeNull();
+  });
+});
+
+describe('keyboard navigation', () => {
+  const buttons = (labels: string[], role = 'menuitem') =>
+    labels.map((label) => h('button', { role }, label));
+  const items = () => [
+    ...document.querySelectorAll<HTMLElement>('[role="menuitem"], [role="option"]'),
+  ];
+  const menu = () => document.querySelector('[role="menu"]');
+  const settle = async () => {
+    await flushPromises();
+    await nextTick();
+  };
+  // Keys go to the focused element, like in the browser
+  const press = (key: string, init: KeyboardEventInit = {}) =>
+    keydown(document.activeElement!, key, init);
+
+  const mountMenu = (labels = ['Profile', 'Settings', 'Sign out'], floatingProps = {}) =>
+    mountPanel(
+      {},
+      { floatingProps: { role: 'menu', ...floatingProps }, content: () => buttons(labels) }
+    );
+
+  it('opens a menu on its first or last item with the arrow keys on the reference', async () => {
+    mountMenu();
+    trigger().focus();
+    const down = await press('ArrowDown');
+    await settle();
+    expect(down.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(items()[0]);
+
+    await keydown(document, 'Escape');
+    expect(document.activeElement).toBe(trigger());
+    await press('ArrowUp');
+    await settle();
+    expect(document.activeElement).toBe(items()[2]);
+  });
+
+  it('focuses an edge item from the reference when already open, even without autoFocus', async () => {
+    mountMenu(undefined, { autoFocus: false });
+    trigger().focus();
+    await openAndSettle();
+    expect(document.activeElement).toBe(trigger());
+
+    await press('ArrowUp');
+    expect(document.activeElement).toBe(items()[2]);
+  });
+
+  it('moves between the items of a menu with arrows, Home and End, wrapping around', async () => {
+    mountMenu();
+    trigger().focus();
+    await press('ArrowDown');
+    await settle();
+
+    const steps: [string, number][] = [
+      ['ArrowDown', 1],
+      ['End', 2],
+      ['ArrowDown', 0],
+      ['ArrowUp', 2],
+      ['Home', 0],
+    ];
+    for (const [key, index] of steps) {
+      const event = await press(key);
+      expect(event.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe(items()[index]);
+    }
+  });
+
+  it('opens a listbox on its selected option and stops at its ends', async () => {
+    mountPanel(
+      {},
+      {
+        floatingProps: { role: 'listbox' },
+        content: () =>
+          ['Red', 'Green', 'Blue'].map((label) =>
+            h(
+              'li',
+              { role: 'option', tabindex: -1, 'aria-selected': String(label === 'Green') },
+              label
+            )
+          ),
+      }
+    );
+    trigger().focus();
+    await openAndSettle();
+    expect(document.activeElement).toBe(items()[1]);
+
+    await press('ArrowUp');
+    await press('ArrowUp');
+    expect(document.activeElement).toBe(items()[0]);
+    await press('End');
+    await press('ArrowDown');
+    expect(document.activeElement).toBe(items()[2]);
+  });
+
+  it('focuses the next item starting with the typed letters', async () => {
+    mountMenu(['Save', 'Settings', 'Share', 'Open']);
+    trigger().focus();
+    await press('ArrowDown');
+    await settle();
+
+    // The same letter again cycles through the items starting with it
+    for (const index of [1, 2, 0]) {
+      await press('s');
+      expect(document.activeElement).toBe(items()[index]);
+    }
+  });
+
+  it('matches several typed letters, with Space as part of the search', async () => {
+    mountMenu(['Open', 'Save', 'Set up', 'Settings']);
+    trigger().focus();
+    await press('ArrowDown');
+    await settle();
+
+    for (const key of ['s', 'e', 't']) await press(key);
+    expect(document.activeElement).toBe(items()[2]);
+    const space = await press(' ');
+    expect(space.defaultPrevented).toBe(true);
+    await press('u');
+    expect(document.activeElement).toBe(items()[2]);
+  });
+
+  it('activates items that are not buttons with Enter and Space', async () => {
+    const onSelect = vi.fn();
+    mountPanel(
+      {},
+      {
+        floatingProps: { role: 'menu' },
+        content: () => [
+          h('div', { role: 'menuitem', tabindex: -1, onClick: onSelect }, 'Rename'),
+          h(
+            'div',
+            { role: 'menuitem', tabindex: -1, 'aria-disabled': 'true', onClick: onSelect },
+            'Delete'
+          ),
+          h('button', { role: 'menuitem' }, 'Share'),
+        ],
+      }
+    );
+    trigger().focus();
+    await press('ArrowDown');
+    await settle();
+
+    await press('Enter');
+    await press(' ');
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    await press('ArrowDown');
+    await press('Enter');
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    // A button gets activated by the browser
+    await press('ArrowDown');
+    expect((await press('Enter')).defaultPrevented).toBe(false);
+  });
+
+  it('closes a menu with Tab and moves focus on as from the reference', async () => {
+    const host = document.createElement('div');
+    const after = document.createElement('button');
+    document.body.append(host, after);
+    mountPanel(
+      {},
+      {
+        attachTo: host,
+        floatingProps: { role: 'menu' },
+        content: () => buttons(['Profile', 'Settings']),
+      }
+    );
+    trigger().focus();
+    await press('ArrowDown');
+    await settle();
+
+    const tab = await press('Tab');
+    expect(tab.defaultPrevented).toBe(true);
+    expect(menu()).toBeNull();
+    expect(document.activeElement).toBe(after);
+
+    trigger().focus();
+    await press('ArrowDown');
+    await settle();
+    await press('Tab', { shiftKey: true });
+    expect(menu()).toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    after.remove();
+    host.remove();
+  });
+
+  describe('submenu', () => {
+    const after = document.createElement('button');
+
+    const mountNested = () => {
+      const host = document.createElement('div');
+      document.body.append(host, after);
+      return mount(SbContainer, {
+        attachTo: host,
+        slots: {
+          default: () => [
+            h(SbReference, () => 'File'),
+            h(SbFloating, { role: 'menu' }, () => [
+              h('button', { role: 'menuitem' }, 'New'),
+              h(SbContainer, { placement: 'right-start' }, () => [
+                h(SbReference, { role: 'menuitem', class: 'sub' }, () => 'Open recent'),
+                h(SbFloating, { role: 'menu', class: 'submenu' }, () =>
+                  buttons(['notes.md', 'todo.md'])
+                ),
+              ]),
+            ]),
+          ],
+        },
+      });
+    };
+    const sub = () => document.querySelector<HTMLElement>('.sub')!;
+    const submenu = () => document.querySelector('.submenu');
+    const subItems = () => [...submenu()!.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+
+    afterEach(() => after.remove());
+
+    it('treats the submenu trigger as an item of the parent menu', async () => {
+      mountNested();
+      trigger().focus();
+      await press('ArrowDown');
+      await settle();
+
+      await press('ArrowDown');
+      expect(document.activeElement).toBe(sub());
+      expect(submenu()).toBeNull();
+      await press('ArrowDown');
+      expect(document.activeElement?.textContent).toBe('New');
+    });
+
+    it('opens with the arrow pointing to it and closes with the opposite one', async () => {
+      mountNested();
+      trigger().focus();
+      await press('ArrowDown');
+      await settle();
+      await press('ArrowDown');
+
+      await press('ArrowRight');
+      await settle();
+      expect(document.activeElement).toBe(subItems()[0]);
+      // Navigation stays inside the submenu
+      await press('ArrowDown');
+      expect(document.activeElement).toBe(subItems()[1]);
+
+      await press('ArrowLeft');
+      expect(submenu()).toBeNull();
+      expect(menu()).not.toBeNull();
+      expect(document.activeElement).toBe(sub());
+    });
+
+    it('mirrors the arrows in right-to-left text', async () => {
+      // happy-dom derives `direction` from CSS, not from the dir attribute
+      document.documentElement.style.direction = 'rtl';
+      mountNested();
+      trigger().focus();
+      await press('ArrowDown');
+      await settle();
+      await press('ArrowDown');
+
+      await press('ArrowRight');
+      await settle();
+      expect(submenu()).toBeNull();
+      await press('ArrowLeft');
+      await settle();
+      expect(document.activeElement).toBe(subItems()[0]);
+      await press('ArrowRight');
+      expect(submenu()).toBeNull();
+      expect(document.activeElement).toBe(sub());
+      document.documentElement.style.direction = '';
+    });
+
+    it('closes every menu on Tab', async () => {
+      mountNested();
+      trigger().focus();
+      await press('ArrowDown');
+      await settle();
+      await press('ArrowDown');
+      await press('ArrowRight');
+      await settle();
+
+      await press('Tab');
+      expect(document.querySelector('[role="menu"]')).toBeNull();
+      expect(document.activeElement).toBe(after);
+    });
+  });
+
+  it('leaves keys to other roles, to the user and to the manual trigger', async () => {
+    const opened = async (
+      props: Record<string, unknown>,
+      floatingProps: Record<string, unknown>
+    ) => {
+      const wrapper = mountPanel(props, { floatingProps, content: () => buttons(['A', 'B']) });
+      trigger().focus();
+      const event = await press('ArrowDown');
+      await settle();
+      const isOpen = trigger().getAttribute('aria-expanded') === 'true';
+      wrapper.unmount();
+      return { prevented: event.defaultPrevented, isOpen };
+    };
+    const closed = { prevented: false, isOpen: false };
+    expect(await opened({}, { role: 'dialog' })).toEqual(closed);
+    expect(await opened({}, { role: 'menu', keyboardNavigation: false })).toEqual(closed);
+    expect(await opened({ trigger: 'manual' }, { role: 'menu' })).toEqual(closed);
+
+    // A keydown handled by the user on the panel
+    mountMenu(undefined, { onKeydown: (event: KeyboardEvent) => event.preventDefault() });
+    trigger().focus();
+    await press('ArrowDown');
+    await settle();
+    expect(document.activeElement).toBe(items()[0]);
+    await press('ArrowDown');
+    expect(document.activeElement).toBe(items()[0]);
+  });
+});
+
+describe('tooltip and hover', () => {
+  const reference = () => document.querySelector<HTMLElement>('.ref')!;
+  const tooltip = () => document.querySelector<HTMLElement>('[role="tooltip"]');
+  const pointer = async (
+    el: Element,
+    type: 'pointerenter' | 'pointerleave',
+    pointerType = 'mouse'
+  ) => {
+    el.dispatchEvent(new PointerEvent(type, { pointerType }));
+    await nextTick();
+  };
+  const wait = async (ms: number) => {
+    vi.advanceTimersByTime(ms);
+    await nextTick();
+  };
+  const settle = async () => {
+    await flushPromises();
+    await nextTick();
+  };
+
+  const mountTooltip = (props: Record<string, unknown> = {}, referenceProps = {}) =>
+    mountPanel(
+      { trigger: 'hover', ...props },
+      {
+        referenceProps: { class: 'ref', ...referenceProps },
+        floatingProps: { role: 'tooltip' },
+        content: () => 'Tooltip text',
+      }
+    );
+
+  afterEach(() => vi.useRealTimers());
+
+  it('describes the reference while open instead of expanding it', async () => {
+    const wrapper = mountTooltip({ trigger: 'manual', defaultOpen: true });
+    await nextTick();
+    expect(reference().hasAttribute('aria-expanded')).toBe(false);
+    expect(reference().hasAttribute('aria-controls')).toBe(false);
+    expect(reference().hasAttribute('aria-haspopup')).toBe(false);
+    expect(reference().getAttribute('aria-describedby')).toBe(tooltip()!.id);
+
+    await wrapper.setProps({ open: false });
+    expect(reference().hasAttribute('aria-describedby')).toBe(false);
+    wrapper.unmount();
+
+    mountTooltip({ trigger: 'manual', defaultOpen: true }, { 'aria-describedby': 'own' });
+    await nextTick();
+    expect(reference().getAttribute('aria-describedby')).toBe('own');
+  });
+
+  it('leaves focus on the reference and renders no focus guards', async () => {
+    const wrapper = mountTooltip({ trigger: 'manual' });
+    reference().focus();
+    (wrapper.vm as unknown as { open: () => void }).open();
+    await settle();
+    expect(tooltip()).not.toBeNull();
+    expect(document.activeElement).toBe(reference());
+    expect(guards()).toHaveLength(0);
+  });
+
+  it('opens and closes on hover after the delays', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    mountTooltip();
+    await pointer(reference(), 'pointerenter');
+    await wait(299);
+    expect(tooltip()).toBeNull();
+    await wait(1);
+    expect(tooltip()).not.toBeNull();
+
+    await pointer(reference(), 'pointerleave');
+    await wait(149);
+    expect(tooltip()).not.toBeNull();
+    await wait(1);
+    expect(tooltip()).toBeNull();
+  });
+
+  it('stays open while the pointer moves from the reference onto the panel', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    mountTooltip();
+    await pointer(reference(), 'pointerenter');
+    await wait(300);
+    const wrapper = tooltip()!.parentElement!;
+
+    await pointer(reference(), 'pointerleave');
+    await wait(100);
+    await pointer(wrapper, 'pointerenter');
+    await wait(500);
+    expect(tooltip()).not.toBeNull();
+
+    await pointer(wrapper, 'pointerleave');
+    await wait(150);
+    expect(tooltip()).toBeNull();
+  });
+
+  it('takes a single delay for both and ignores touch', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    mountTooltip({ delay: 0 });
+    await pointer(reference(), 'pointerenter', 'touch');
+    await wait(1000);
+    expect(tooltip()).toBeNull();
+
+    await pointer(reference(), 'pointerenter');
+    await wait(0);
+    expect(tooltip()).not.toBeNull();
+    await pointer(reference(), 'pointerleave');
+    await wait(0);
+    expect(tooltip()).toBeNull();
+  });
+
+  it('opens on focus at once and closes when focus moves elsewhere', async () => {
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    for (const trigger of ['hover', 'focus']) {
+      const wrapper = mountTooltip({ trigger });
+      reference().focus();
+      await nextTick();
+      expect(tooltip()).not.toBeNull();
+      outside.focus();
+      await nextTick();
+      expect(tooltip()).toBeNull();
+      wrapper.unmount();
+    }
+    outside.remove();
+  });
+
+  it('does not move focus into a panel opened by focus, nor reopen it on Escape', async () => {
+    mountPanel({ trigger: 'focus' }, { referenceProps: { class: 'ref' } });
+    reference().focus();
+    await settle();
+    expect(panel()).not.toBeNull();
+    expect(document.activeElement).toBe(reference());
+    await keydown(document, 'Escape');
+    expect(panel()).toBeNull();
+    document.body.focus();
+
+    // With autoFocus, Escape gives focus back to the reference, which does not reopen it
+    const wrapper = mountPanel(
+      { trigger: 'focus' },
+      { referenceProps: { class: 'ref' }, floatingProps: { autoFocus: true } }
+    );
+    wrapper.findComponent(SbReference).element.focus();
+    await settle();
+    expect(document.activeElement).toBe(document.querySelectorAll('.inside')[0]);
+    await keydown(document, 'Escape');
+    await nextTick();
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(wrapper.findComponent(SbReference).element);
+  });
+
+  it('opens a hover menu on its first item with ArrowDown', async () => {
+    mountPanel(
+      { trigger: 'hover' },
+      {
+        referenceProps: { class: 'ref' },
+        floatingProps: { role: 'menu' },
+        content: () => h('button', { role: 'menuitem' }, 'Profile'),
+      }
+    );
+    reference().focus();
+    await settle();
+    expect(document.activeElement).toBe(reference());
+    await keydown(reference(), 'ArrowDown');
+    expect(document.activeElement?.textContent).toBe('Profile');
+  });
+});
+
+describe('misuse and edge cases', () => {
+  const warnings = () => vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('warns about a second SbReference or SbFloating in one container', () => {
+    const spy = warnings();
+    mount(SbContainer, {
+      attachTo: document.body,
+      slots: {
+        default: () => [
+          h(SbReference, () => 'One'),
+          h(SbReference, () => 'Two'),
+          h(SbFloating, () => 'Panel'),
+          h(SbFloating, () => 'Panel'),
+        ],
+      },
+    });
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy.mock.calls[0]![0]).toContain('more than one <SbReference>');
+    expect(spy.mock.calls[1]![0]).toContain('more than one <SbFloating>');
+  });
+
+  it('warns when a component reference renders no element', () => {
+    const spy = warnings();
+    const Fragment = defineComponent({ setup: () => () => [h('span'), h('span')] });
+    mountPanel({}, { referenceProps: { as: Fragment } });
+    // Vue also warns about the attributes it cannot place on a fragment
+    const ours = spy.mock.calls.filter(([message]) => String(message).startsWith('[sb-floating'));
+    expect(ours).toHaveLength(1);
+    expect(ours[0]![0]).toContain('single root element');
+  });
+
+  it('does not warn in production', async () => {
+    const spy = warnings();
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.resetModules();
+    const { warn } = await import('../src/dev');
+    warn('message');
+    expect(spy).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
+  it('closes when the reference unmounts, not when the whole container does', async () => {
+    const onToggle = vi.fn();
+    const Host = defineComponent({
+      props: { showReference: Boolean },
+      setup: (props) => () =>
+        h(SbContainer, { defaultOpen: true, 'onUpdate:open': onToggle }, () => [
+          props.showReference ? h(SbReference, () => 'Trigger') : null,
+          h(SbFloating),
+        ]),
+    });
+    const wrapper = mount(Host, { props: { showReference: true }, attachTo: document.body });
+    await nextTick();
+    expect(panel()).not.toBeNull();
+
+    await wrapper.setProps({ showReference: false });
+    expect(onToggle).toHaveBeenCalledWith(false);
+    expect(panel()).toBeNull();
+
+    onToggle.mockClear();
+    const other = mount(Host, { props: { showReference: true }, attachTo: document.body });
+    await nextTick();
+    other.unmount();
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  it('closes when the reference is detached with hideWhenDetached close', async () => {
+    // happy-dom has no layout: every rect is empty, so the reference counts as scrolled away
+    mountPanel({ hideWhenDetached: true, defaultOpen: true });
+    await flushPromises();
+    expect(panel()!.parentElement!.style.visibility).toBe('hidden');
+
+    mountPanel(
+      { hideWhenDetached: 'close', defaultOpen: true },
+      { floatingProps: { class: 'closing' } }
+    );
+    await flushPromises();
+    await nextTick();
+    expect(document.querySelector('.closing')).toBeNull();
+  });
+
+  it('closes on Escape the open panel that has focus', async () => {
+    const first = mountPanel(
+      { defaultOpen: true, closeOnClickOutside: false, closeOnFocusOut: false },
+      { floatingProps: { class: 'first' } }
+    );
+    const second = mountPanel(
+      { defaultOpen: true, closeOnClickOutside: false, closeOnFocusOut: false },
+      { floatingProps: { class: 'second' } }
+    );
+    await nextTick();
+    document.querySelector<HTMLElement>('.first .inside')!.focus();
+
+    await keydown(document.activeElement!, 'Escape');
+    expect(document.querySelector('.first')).toBeNull();
+    expect(document.querySelector('.second')).not.toBeNull();
+    first.unmount();
+    second.unmount();
+  });
+});
+
+describe('API', () => {
+  it('passes the ids of the panel and the reference to the slot', async () => {
+    mountPanel(
+      { defaultOpen: true },
+      {
+        referenceProps: { id: 'account' },
+        content: (slot) => h('p', { class: 'ids' }, `${slot.floatingId} ${slot.referenceId}`),
+      }
+    );
+    await nextTick();
+    expect(document.querySelector('.ids')!.textContent).toBe(`${panel()!.id} account`);
+  });
+
+  it('exposes the open state', async () => {
+    const wrapper = mountPanel();
+    const exposed = wrapper.vm as unknown as SbContainerExposed;
+    expect(exposed.isOpen).toBe(false);
+    exposed.open();
+    await nextTick();
+    expect(exposed.isOpen).toBe(true);
+  });
+
+  it('renders a component as the panel', async () => {
+    const Card = defineComponent({
+      setup:
+        (_, { slots }) =>
+        () =>
+          h('section', { class: 'card' }, slots.default?.()),
+    });
+    mountPanel({}, { floatingProps: { as: Card } });
+    trigger().focus();
+    await openAndSettle();
+    expect(panel()!.tagName).toBe('SECTION');
+    expect(panel()!.classList.contains('card')).toBe(true);
+    expect(document.activeElement).toBe(document.querySelector('.card .inside'));
+  });
+
+  it('teleports to the given target, or renders in place with false', async () => {
+    const target = document.createElement('div');
+    target.id = 'overlays';
+    document.body.append(target);
+    const wrapper = mountPanel({ defaultOpen: true }, { floatingProps: { teleport: '#overlays' } });
+    await nextTick();
+    expect(target.contains(panel())).toBe(true);
+    wrapper.unmount();
+
+    const host = document.createElement('div');
+    document.body.append(host);
+    mountPanel({ defaultOpen: true }, { attachTo: host, floatingProps: { teleport: false } });
+    await nextTick();
+    expect(host.contains(panel())).toBe(true);
+    target.remove();
+    host.remove();
   });
 });
