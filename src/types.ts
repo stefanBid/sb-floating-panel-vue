@@ -96,6 +96,13 @@ export interface SbContainerProps {
    * @default true
    */
   closeOnClickOutside?: boolean;
+
+  /**
+   * Closes the panel when keyboard focus moves outside the reference and the panel
+   * (e.g. tabbing past the last element of the panel).
+   * @default true
+   */
+  closeOnFocusOut?: boolean;
 }
 
 /**
@@ -142,8 +149,15 @@ export interface SbReferenceProps {
   as?: string;
 
   /**
-   * Value of `aria-haspopup`, matching the `role` of `SbFloating`.
-   * @default 'dialog'
+   * `id` of the element. The panel is named after the reference with `aria-labelledby`.
+   * @default an id generated with `useId()`
+   */
+  id?: string;
+
+  /**
+   * Value of `aria-haspopup`. When unset it follows the `role` of `SbFloating`
+   * (`dialog`, `menu`, `listbox`, `tree`, `grid`; `alertdialog` gives `dialog`)
+   * and is left out for any other role.
    */
   ariaHaspopup?: 'dialog' | 'menu' | 'listbox' | 'tree' | 'grid' | 'true' | 'false';
 }
@@ -159,10 +173,12 @@ export interface SbFloatingProps {
   as?: string;
 
   /**
-   * ARIA role of the panel.
+   * ARIA role of the panel. With a role, the panel is named after the reference with
+   * `aria-labelledby`, unless you pass `aria-label` or `aria-labelledby` yourself.
+   * `null` renders no role (disclosure pattern).
    * @default 'dialog'
    */
-  role?: string;
+  role?: string | null;
 
   /**
    * Name of a Vue `<Transition>` defined by your CSS (`<name>-enter-active`, …).
@@ -190,7 +206,8 @@ export interface SbFloatingProps {
   /**
    * Moves focus inside the panel once it is positioned: to the first element with
    * `autofocus`, otherwise to the first focusable element, otherwise to the panel itself.
-   * @default false
+   * Set it to `false` for panels that must not take focus, such as tooltips.
+   * @default true
    */
   autoFocus?: boolean;
 }

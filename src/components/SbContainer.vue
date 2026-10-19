@@ -3,7 +3,7 @@ const handledEscapes = new WeakSet<Event>();
 </script>
 
 <script setup lang="ts">
-import { computed, inject, onScopeDispose, provide, toRef, useId, watch } from 'vue';
+import { computed, inject, onScopeDispose, provide, ref, toRef, useId, watch } from 'vue';
 import { useSbFloatingPanel } from '../composables/useSbFloatingPanel';
 import { sbFloatingContextKey, type SbFloatingContext } from '../context';
 import type { SbContainerExposed, SbContainerProps, SbContainerSlotProps } from '../types';
@@ -22,6 +22,7 @@ const props = withDefaults(defineProps<Omit<SbContainerProps, 'open'>>(), {
   trigger: 'click',
   closeOnEscape: true,
   closeOnClickOutside: true,
+  closeOnFocusOut: true,
 });
 
 // `undefined` until the parent binds `v-model:open` or the panel is toggled once
@@ -66,6 +67,9 @@ const context: SbFloatingContext = {
   disabled: toRef(props, 'disabled'),
   trigger: toRef(props, 'trigger'),
   floatingId: `${useId()}-floating`,
+  referenceId: ref<string | undefined>(),
+  // Same default as the `role` prop of SbFloating, for the render before it is set up
+  floatingRole: ref<string | null>('dialog'),
   open,
   close,
   toggle,
@@ -103,6 +107,12 @@ const onPointerdown = (event: PointerEvent) => {
   if (!context.contains(event.composedPath()[0] ?? event.target)) close();
 };
 
+// A non-modal panel closes when keyboard focus moves on to the rest of the page
+const onFocusin = (event: FocusEvent) => {
+  if (!props.closeOnFocusOut) return;
+  if (!context.contains(event.composedPath()[0] ?? event.target)) close();
+};
+
 // Document listeners only while the panel is open
 watch(
   isOpen,
@@ -110,9 +120,11 @@ watch(
     if (!value || typeof document === 'undefined') return;
     document.addEventListener('keydown', onKeydown);
     document.addEventListener('pointerdown', onPointerdown, true);
+    document.addEventListener('focusin', onFocusin);
     onCleanup(() => {
       document.removeEventListener('keydown', onKeydown);
       document.removeEventListener('pointerdown', onPointerdown, true);
+      document.removeEventListener('focusin', onFocusin);
     });
   },
   { immediate: true }

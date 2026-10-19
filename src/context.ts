@@ -10,6 +10,10 @@ export interface SbFloatingContext extends FloatingPanel {
   disabled: Readonly<Ref<boolean>>;
   trigger: Readonly<Ref<SbTrigger>>;
   floatingId: string;
+  /** Id of the mounted `SbReference`, used to name the panel with `aria-labelledby`. */
+  referenceId: Ref<string | undefined>;
+  /** `role` of the mounted `SbFloating`, used to derive `aria-haspopup` on the reference. */
+  floatingRole: Ref<string | null>;
   open: () => void;
   close: () => void;
   toggle: () => void;
