@@ -13,11 +13,22 @@ export type SbPlacement = SbSide | `${SbSide}-${SbAlignment}`;
 export type SbStrategy = 'absolute' | 'fixed';
 
 /**
+ * ARIA role of the panel. The roles the components act on are suggested by your editor;
+ * any other role is accepted as a string.
+ */
+export type SbFloatingRole =
+  'dialog' | 'alertdialog' | 'menu' | 'listbox' | 'tree' | 'grid' | 'tooltip' | (string & {});
+
+/**
  * How the reference opens the floating panel.
  * - `click`: clicking (or pressing Enter/Space on) `SbReference` toggles the panel.
+ * - `hover`: the pointer over `SbReference` opens the panel after `delay.open`, keyboard focus
+ *   opens it at once. It closes `delay.close` after the pointer leaves both the reference and the
+ *   panel, so the pointer can move onto the panel, and when focus leaves them. Touch has no hover.
+ * - `focus`: focus on `SbReference` opens the panel, focus moving elsewhere closes it.
  * - `manual`: the panel opens only through `v-model:open`, the slot props or the exposed methods.
  */
-export type SbTrigger = 'click' | 'manual';
+export type SbTrigger = 'click' | 'hover' | 'focus' | 'manual';
 
 /**
  * Props for the `SbContainer` component: positioning, open state and interaction.
@@ -59,10 +70,12 @@ export interface SbContainerProps {
   matchWidth?: boolean | 'min';
 
   /**
-   * Hides the floating panel (`visibility: hidden`) when the reference is scrolled out of view.
+   * When the reference is scrolled out of view:
+   * - `true`: hides the floating panel (`visibility: hidden`) until the reference is back.
+   * - `'close'`: closes the panel, so focus never stays inside a hidden panel.
    * @default false
    */
-  hideWhenDetached?: boolean;
+  hideWhenDetached?: boolean | 'close';
 
   /**
    * Open state, bound with `v-model:open`. Leave it unset to let the container manage it.
@@ -86,6 +99,13 @@ export interface SbContainerProps {
    * @default 'click'
    */
   trigger?: SbTrigger;
+
+  /**
+   * Delay in milliseconds before the `hover` trigger opens and closes the panel: a number for
+   * both, or an object (missing keys keep their default). Focus opens the panel without delay.
+   * @default { open: 300, close: 150 }
+   */
+  delay?: number | { open?: number; close?: number };
 
   /**
    * Closes the panel when the Escape key is pressed.
@@ -125,12 +145,18 @@ export interface SbContainerSlotProps {
   side: SbSide;
   /** Alignment of the resolved placement, `undefined` when centered. */
   align: SbAlignment | undefined;
+  /** `id` of the panel, e.g. for an `aria-describedby` of your own. */
+  floatingId: string;
+  /** `id` of the reference, `undefined` until `SbReference` is set up. */
+  referenceId: string | undefined;
 }
 
 /**
  * Methods exposed by `SbContainer` through a template ref.
  */
 export interface SbContainerExposed {
+  /** Whether the panel is open. */
+  readonly isOpen: boolean;
   /** Opens the panel. */
   open: () => void;
   /** Closes the panel. */
@@ -177,19 +203,22 @@ export interface SbReferenceProps {
  */
 export interface SbFloatingProps {
   /**
-   * HTML tag of the panel element (the one that receives your `class`, `style` and attributes).
+   * HTML tag or component of the panel element (the one that receives your `class`, `style`
+   * and attributes). A component must render a single root element.
    * @default 'div'
    */
-  as?: string;
+  as?: string | Component;
 
   /**
    * ARIA role of the panel. With a popup role (`dialog`, `alertdialog`, `menu`, `listbox`,
    * `tree`, `grid`), the panel is named after the reference with `aria-labelledby`, unless
    * you pass `aria-label` or `aria-labelledby` yourself.
+   * With `tooltip`, the open panel describes the reference with `aria-describedby` (unless you
+   * pass it on `SbReference`) instead of `aria-expanded` and `aria-controls`.
    * `null` renders no role (disclosure pattern).
    * @default 'dialog'
    */
-  role?: string | null;
+  role?: SbFloatingRole | null;
 
   /**
    * Animation of the panel, through a Vue `<Transition>` on the panel element.
@@ -204,16 +233,11 @@ export interface SbFloatingProps {
   transition?: string | TransitionProps;
 
   /**
-   * Teleport target (CSS selector or element).
+   * Where the panel is teleported: a CSS selector or an element. `false` renders it in place,
+   * next to the reference.
    * @default 'body'
    */
-  teleportTo?: string | HTMLElement;
-
-  /**
-   * Renders the panel in place instead of teleporting it.
-   * @default false
-   */
-  teleportDisabled?: boolean;
+  teleport?: string | HTMLElement | false;
 
   /**
    * `z-index` of the positioned wrapper.
@@ -223,8 +247,28 @@ export interface SbFloatingProps {
   /**
    * Moves focus inside the panel once it is positioned: to the first element with
    * `autofocus`, otherwise to the first focusable element, otherwise to the panel itself.
-   * Set it to `false` for panels that must not take focus, such as tooltips.
-   * @default true
+   * With `role="menu"` or `listbox` the first item gets focus (a listbox: its selected option).
+   * @default true, false with `role="tooltip"` and with the `hover` and `focus` triggers
    */
   autoFocus?: boolean;
+
+  /**
+   * Handles the keyboard model of `role="menu"` and `role="listbox"` panels
+   * (WAI-ARIA menu button and listbox patterns). Items are the elements with role `menuitem`,
+   * `menuitemcheckbox`, `menuitemradio` (menu) or `option` (listbox); they must be focusable,
+   * e.g. buttons or elements with `tabindex="-1"`.
+   * - ArrowDown / ArrowUp on the reference open the panel on the first / last item
+   *   (not with the `manual` trigger).
+   * - ArrowDown / ArrowUp move between items (a menu wraps around), Home / End go to the ends,
+   *   typing letters focuses the next item whose text starts with them.
+   * - Enter and Space activate items that are not buttons or links, with a click.
+   * - Menu only: Tab and Shift+Tab close it and move focus on, as from its reference.
+   * - Submenu (a menu inside a menu): ArrowRight on its reference opens it, ArrowLeft closes it
+   *   (mirrored in right-to-left text).
+   *
+   * Keys whose `keydown` you already handled with `preventDefault()` are left to you.
+   * No effect with other roles.
+   * @default true
+   */
+  keyboardNavigation?: boolean;
 }

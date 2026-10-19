@@ -31,7 +31,7 @@ export interface FloatingPanelOptions {
   offset: MaybeRefOrGetter<number>;
   padding: MaybeRefOrGetter<number>;
   matchWidth: MaybeRefOrGetter<boolean | 'min'>;
-  hideWhenDetached: MaybeRefOrGetter<boolean>;
+  hideWhenDetached: MaybeRefOrGetter<boolean | 'close'>;
 }
 
 export interface FloatingPanel {
@@ -44,15 +44,21 @@ export interface FloatingPanel {
   side: ComputedRef<SbSide>;
   align: ComputedRef<SbAlignment | undefined>;
   isPositioned: Readonly<Ref<boolean>>;
+  /** Whether the reference is scrolled out of view, with `hideWhenDetached`. */
+  referenceHidden: ComputedRef<boolean>;
   update: () => void;
 }
 
 const px = (value: number) => `${Math.max(0, value)}px`;
 
-// Corner or edge of the panel facing the reference, as Radix computes it without an arrow
-const transformOrigin = (placement: string) => {
+// Corner or edge of the panel facing the reference, as Radix computes it without an arrow.
+// In right-to-left text Floating UI mirrors the alignment on the top and bottom sides only.
+const transformOrigin = (placement: string, rtl: boolean) => {
   const [side, align] = placement.split('-');
-  const cross = align === 'start' ? '0%' : align === 'end' ? '100%' : '50%';
+  const mirrored = rtl && (side === 'top' || side === 'bottom');
+  const start = mirrored ? '100%' : '0%';
+  const end = mirrored ? '0%' : '100%';
+  const cross = align === 'start' ? start : align === 'end' ? end : '50%';
   if (side === 'top') return `${cross} 100%`;
   if (side === 'bottom') return `${cross} 0%`;
   return side === 'left' ? `100% ${cross}` : `0% ${cross}`;
@@ -88,7 +94,9 @@ export function useSbFloatingPanel(options: FloatingPanelOptions): FloatingPanel
           const { style } = elements.floating;
           const referenceWidth = px(rects.reference.width);
           style.setProperty('--sbf-reference-width', referenceWidth);
-          style.setProperty('--sbf-transform-origin', transformOrigin(placement));
+          // Same test as the isRTL of the Floating UI DOM platform
+          const rtl = getComputedStyle(elements.floating).direction === 'rtl';
+          style.setProperty('--sbf-transform-origin', transformOrigin(placement, rtl));
           style.setProperty('--sbf-available-width', px(availableWidth));
           style.setProperty('--sbf-available-height', px(availableHeight));
           style.width = matchWidth === true ? referenceWidth : '';
@@ -114,13 +122,25 @@ export function useSbFloatingPanel(options: FloatingPanelOptions): FloatingPanel
     whileElementsMounted: autoUpdate,
   });
 
+  const referenceHidden = computed(() => !!middlewareData.value.hide?.referenceHidden);
+
   const floatingStyles = computed<CSSProperties>(() => ({
     ...positionStyles.value,
-    ...(middlewareData.value.hide?.referenceHidden ? { visibility: 'hidden' } : {}),
+    ...(referenceHidden.value ? { visibility: 'hidden' } : {}),
   }));
 
   const side = computed(() => placement.value.split('-')[0] as SbSide);
   const align = computed(() => placement.value.split('-')[1] as SbAlignment | undefined);
 
-  return { reference, floating, floatingStyles, placement, side, align, isPositioned, update };
+  return {
+    reference,
+    floating,
+    floatingStyles,
+    placement,
+    side,
+    align,
+    isPositioned,
+    referenceHidden,
+    update,
+  };
 }

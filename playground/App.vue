@@ -21,27 +21,6 @@ const placements: SbPlacement[] = [
 const menuItems = ['Profile', 'Settings', 'Sign out'];
 const lastAction = ref('none');
 
-// The library leaves the keyboard model of role="menu" to you: arrow keys, Home and End
-const onMenuKeydown = (event: KeyboardEvent) => {
-  const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
-  if (!keys.includes(event.key)) return;
-  const menu = event.currentTarget as HTMLElement;
-  // Only the items of this menu, not those of a nested submenu
-  const items = [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')].filter(
-    (item) => item.closest('[role="menu"]') === menu
-  );
-  const index = items.indexOf(document.activeElement as HTMLElement);
-  const last = items.length - 1;
-  const next = {
-    ArrowDown: index < last ? index + 1 : 0,
-    ArrowUp: index > 0 ? index - 1 : last,
-    Home: 0,
-    End: last,
-  }[event.key]!;
-  event.preventDefault();
-  items[next]?.focus();
-};
-
 // Popover controlled with v-model:open
 const popoverOpen = ref(false);
 const feedback = ref('');
@@ -60,7 +39,7 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
     <header>
       <h1>sb-floating-panel-vue</h1>
       <p>
-        Playground for the v3 components. The library ships no CSS: every style below lives in this
+        Playground for the components. The library ships no CSS: every style below lives in this
         file. Run it with <code>npm run dev</code>.
       </p>
     </header>
@@ -70,15 +49,16 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
       <p>
         <code>matchWidth="min"</code>, <code>role="menu"</code> (the trigger gets
         <code>aria-haspopup="menu"</code> from it), <code>pop</code> transition, the chevron rotates
-        with <code>data-sbf-state</code>. Focus moves to the first item; the arrow keys, Home and
-        End are handled here, in the playground.
+        with <code>data-sbf-state</code>. The library handles the keyboard: ArrowDown / ArrowUp on
+        the trigger open it on the first / last item, then arrows, Home, End and typing a letter
+        move between items; Tab closes it and moves on.
       </p>
       <SbContainer placement="bottom-start" :offset="6" match-width="min">
         <template #default="{ close }">
           <SbReference class="trigger trigger--wide">
             Account menu <span class="chevron" aria-hidden="true">▾</span>
           </SbReference>
-          <SbFloating role="menu" transition="pop" class="panel" @keydown="onMenuKeydown">
+          <SbFloating role="menu" transition="pop" class="panel">
             <ul class="menu" role="none">
               <li v-for="item in menuItems" :key="item" role="none">
                 <button
@@ -133,26 +113,14 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
     <section class="card">
       <h2>Tooltip</h2>
       <p>
-        <code>trigger="manual"</code>: the panel opens from the slot functions, here on hover and
-        focus. <code>role="tooltip"</code> with <code>:auto-focus="false"</code>, and the trigger is
-        described by the tooltip text through <code>aria-describedby</code>.
+        <code>trigger="hover"</code>: opens 300 ms after the pointer enters, at once on keyboard
+        focus. The pointer can move onto the tooltip without closing it; Escape dismisses it.
+        <code>role="tooltip"</code> keeps focus on the trigger and describes it with
+        <code>aria-describedby</code>.
       </p>
-      <SbContainer placement="top" trigger="manual" :offset="6">
-        <template #default="{ open, close }">
-          <SbReference
-            class="trigger trigger--text"
-            aria-describedby="tooltip-text"
-            @mouseenter="open()"
-            @mouseleave="close()"
-            @focus="open()"
-            @blur="close()"
-          >
-            Hover or focus me
-          </SbReference>
-          <SbFloating role="tooltip" :auto-focus="false" transition="pop" class="tooltip">
-            <span id="tooltip-text">Tooltip text</span>
-          </SbFloating>
-        </template>
+      <SbContainer placement="top" trigger="hover" :offset="6">
+        <SbReference class="trigger trigger--text">Hover or focus me</SbReference>
+        <SbFloating role="tooltip" transition="pop" class="tooltip">Tooltip text</SbFloating>
       </SbContainer>
     </section>
 
@@ -247,17 +215,18 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
       <h2>Nested menu</h2>
       <p>
         A container inside a panel belongs to it: clicks in the submenu keep the parent open, Escape
-        closes the innermost first.
+        closes the innermost first. ArrowRight on <em>Open recent</em> opens the submenu, ArrowLeft
+        closes it; Tab closes both.
       </p>
       <SbContainer>
         <SbReference class="trigger">File</SbReference>
-        <SbFloating role="menu" transition="pop" class="panel" @keydown="onMenuKeydown">
+        <SbFloating role="menu" transition="pop" class="panel">
           <ul class="menu" role="none">
             <li role="none"><button type="button" role="menuitem">New</button></li>
             <li role="none">
               <SbContainer placement="right-start" :offset="4">
                 <SbReference class="menu__sub" role="menuitem">Open recent ▸</SbReference>
-                <SbFloating role="menu" transition="pop" class="panel" @keydown="onMenuKeydown">
+                <SbFloating role="menu" transition="pop" class="panel">
                   <ul class="menu" role="none">
                     <li role="none"><button type="button" role="menuitem">notes.md</button></li>
                     <li role="none"><button type="button" role="menuitem">todo.md</button></li>

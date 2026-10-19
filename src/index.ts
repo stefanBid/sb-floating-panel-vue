@@ -15,4 +15,5 @@ export type {
   SbSide,
   SbAlignment,
   SbStrategy,
+  SbFloatingRole,
 } from './types';
