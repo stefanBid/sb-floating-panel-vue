@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, useAttrs, useId, watchEffect } from 'vue';
-import { claimPart, inMenu, useSbFloatingContext } from '../composables/useSbFloatingContext';
+import {
+  claimPart,
+  inMenu,
+  moveFocusOut,
+  useSbFloatingContext,
+} from '../composables/useSbFloatingContext';
 import type { SbReferenceProps } from '../types';
 import { POPUP_ROLES } from '../utils/aria';
 import { getTabbables, toElement } from '../utils/dom';
@@ -56,7 +61,10 @@ onBeforeUnmount(() => {
   if (context.referenceId.value === id.value) context.referenceId.value = undefined;
   release();
   // A panel left without its reference has nothing to be anchored to nor to give focus back to
-  if (!context.parts.reference && !context.isUnmounting) context.close();
+  if (!context.parts.reference && !context.isUnmounting) {
+    context.skipFocusReturn = moveFocusOut(context, false);
+    context.close();
+  }
 });
 
 const ariaHaspopup = computed(

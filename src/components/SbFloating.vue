@@ -15,6 +15,7 @@ import {
 import {
   claimPart,
   inMenu,
+  moveFocusOut,
   useSbFloatingContext,
   type SbFloatingContext,
 } from '../composables/useSbFloatingContext';
@@ -59,6 +60,10 @@ const emit = defineEmits<{
 const attrs = useAttrs();
 const context = useSbFloatingContext('SbFloating');
 onBeforeUnmount(claimPart(context, 'floating', 'SbFloating'));
+// Removed on its own while open (e.g. `v-if`): focus inside goes back to the reference
+onBeforeUnmount(() => {
+  if (!context.isUnmounting) moveFocusOut(context, true);
+});
 const { isOpen, floatingId, referenceId, side, align } = context;
 
 // Lets SbReference derive `aria-haspopup` from the role and handle the arrow keys

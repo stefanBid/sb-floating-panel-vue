@@ -1,5 +1,6 @@
 import { inject, type InjectionKey, type Ref } from 'vue';
 import type { SbTrigger } from '../types';
+import { getNextTabbable } from '../utils/dom';
 import type { NavigableRole } from '../utils/navigation';
 import { warn } from '../utils/warn';
 import type { FloatingPanel } from './useSbFloatingPanel';
@@ -44,6 +45,22 @@ export interface SbFloatingContext extends FloatingPanel {
 
 /** Whether the container is nested in a menu (a submenu): its reference is an item of it. */
 export const inMenu = (context: SbFloatingContext) => context.parent?.navigation.value === 'menu';
+
+/**
+ * Moves focus out of the panel (or a panel nested in it) about to unmount, which would leave it on
+ * the body: to the reference, or to what follows the reference in the page when that goes too.
+ * Returns whether focus was in the panel.
+ */
+export function moveFocusOut(context: SbFloatingContext, toReference: boolean): boolean {
+  const active = document.activeElement;
+  const reference = context.reference.value;
+  if (!active || !reference || reference.contains(active) || !context.contains(active)) {
+    return false;
+  }
+  const target = toReference ? reference : getNextTabbable(reference, (el) => context.contains(el));
+  target?.focus({ preventScroll: true });
+  return true;
+}
 
 export const sbFloatingContextKey: InjectionKey<SbFloatingContext> = Symbol('SbFloatingContext');
 

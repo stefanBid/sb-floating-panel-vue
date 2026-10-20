@@ -18,7 +18,11 @@ import {
   useId,
   watch,
 } from 'vue';
-import { sbFloatingContextKey, type SbFloatingContext } from '../composables/useSbFloatingContext';
+import {
+  moveFocusOut,
+  sbFloatingContextKey,
+  type SbFloatingContext,
+} from '../composables/useSbFloatingContext';
 import { useSbFloatingPanel } from '../composables/useSbFloatingPanel';
 import type { SbContainerExposed, SbContainerProps, SbContainerSlotProps } from '../types';
 import { isFocusable } from '../utils/dom';
@@ -142,8 +146,11 @@ if (parent) onScopeDispose(parent.registerChild(context));
 
 provide(sbFloatingContextKey, context);
 
-// Runs before the parts unmount (vuejs.org/api/composition-api-lifecycle)
-onBeforeUnmount(() => (context.isUnmounting = true));
+// Runs before the parts unmount (vuejs.org/api/composition-api-lifecycle), with the DOM intact
+onBeforeUnmount(() => {
+  context.isUnmounting = true;
+  moveFocusOut(context, false);
+});
 
 // The most recently opened panel that has focus, else the most recently opened one:
 // two sibling panels stay open together when closeOnClickOutside is false

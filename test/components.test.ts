@@ -1441,6 +1441,48 @@ describe('misuse and edge cases', () => {
     expect(onToggle).not.toHaveBeenCalled();
   });
 
+  it('moves focus out of an open panel that unmounts instead of leaving it on the body', async () => {
+    const Host = defineComponent({
+      props: { show: { type: String, default: 'all' } },
+      setup: (props) => () =>
+        props.show === 'none'
+          ? null
+          : h(SbContainer, { defaultOpen: true }, () => [
+              props.show !== 'floating' ? h(SbReference, () => 'Trigger') : null,
+              props.show !== 'reference' ? h(SbFloating, () => h('button', 'Inside')) : null,
+            ]),
+    });
+    const host = document.createElement('div');
+    const after = document.createElement('button');
+    document.body.append(host, after);
+    const focusInside = async (wrapper: ReturnType<typeof mount>) => {
+      await wrapper.setProps({ show: 'all' });
+      // Closed when the reference went away
+      if (!panel()) await click(trigger());
+      await flushPromises();
+      panel()!.querySelector('button')!.focus();
+    };
+    const wrapper = mount(Host, { attachTo: host });
+
+    // The panel alone: focus goes back to the reference
+    await focusInside(wrapper);
+    await wrapper.setProps({ show: 'reference' });
+    expect(document.activeElement).toBe(trigger());
+
+    // The reference alone: the panel closes, focus goes to what follows the reference
+    await focusInside(wrapper);
+    await wrapper.setProps({ show: 'floating' });
+    expect(panel()).toBeNull();
+    expect(document.activeElement).toBe(after);
+
+    // The whole container: focus goes to what followed the reference
+    await focusInside(wrapper);
+    await wrapper.setProps({ show: 'none' });
+    expect(document.activeElement).toBe(after);
+    after.remove();
+    host.remove();
+  });
+
   it('closes when the reference is detached with hideWhenDetached close', async () => {
     // happy-dom has no layout: every rect is empty, so the reference counts as scrolled away
     mountPanel({ hideWhenDetached: true, defaultOpen: true });
