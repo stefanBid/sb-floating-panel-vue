@@ -357,7 +357,7 @@ SbContainer ── provides the state ──┬─▶ SbReference
 - The lookup follows the component tree, not the DOM, so it keeps working although `SbFloating` is teleported to `body`.
 - They can sit at any depth inside the container slot, also inside your own components.
 - Used outside an `SbContainer`, they throw: `[sb-floating-panel-vue] <SbFloating> must be used inside <SbContainer>.`
-- In development, the console warns about a second `SbReference` or `SbFloating` in the same container about an `as` component that renders no single root element and about a text field reference of a `menu` or `listbox` panel. The warnings depend on `process.env.NODE_ENV`, which your bundler replaces: they are left out of production builds.
+- In development, the console warns about a second `SbReference` or `SbFloating` in the same container about an `as` component that renders no single root element, about a text field reference of a `menu` or `listbox` panel, about a `tooltip` opened by click, and, the first time the arrow keys look for them, about a `menu` or `listbox` with no items or with items that cannot take focus. The warnings depend on `process.env.NODE_ENV`, which your bundler replaces: they are left out of production builds.
 
 ### Nested containers
 
