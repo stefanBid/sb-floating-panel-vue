@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.1.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.0.3...v5.1.0) (2026-10-20)
+
+
+### Features
+
+* add closeOnSelect and the useSbFloating composable ([#28](https://github.com/stefanBid/sb-floating-panel-vue/issues/28)) ([71cd856](https://github.com/stefanBid/sb-floating-panel-vue/commit/71cd85628ba6e6a6594651fa6f13ee801aad78d4))
+
 ## [5.0.3](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.0.2...v5.0.3) (2026-10-20)
 
 
