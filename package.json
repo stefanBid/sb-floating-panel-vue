@@ -1,6 +1,6 @@
 {
   "name": "sb-floating-panel-vue",
-  "version": "5.1.1",
+  "version": "5.1.2",
   "description": "Headless Vue 3 floating panel components (dropdowns, popovers, menus) powered by @floating-ui/vue: positioning, accessibility and open state handled, zero CSS shipped.",
   "keywords": [
     "vue",
