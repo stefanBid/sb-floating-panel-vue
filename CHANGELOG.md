@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.0.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.0.0...v5.0.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* keep hover panels open over nested panels ([#22](https://github.com/stefanBid/sb-floating-panel-vue/issues/22)) ([9ce31dc](https://github.com/stefanBid/sb-floating-panel-vue/commit/9ce31dc89434d6a38172113599327f138a9d7692))
+
 ## [5.0.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v4.0.0...v5.0.0) (2026-10-19)
 
 
