@@ -1099,7 +1099,10 @@ describe('tooltip and hover', () => {
       }
     );
 
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
 
   it('describes the reference while open instead of expanding it', async () => {
     const wrapper = mountTooltip({ trigger: 'manual', defaultOpen: true });
@@ -1276,6 +1279,24 @@ describe('tooltip and hover', () => {
       wrapper.unmount();
     }
     outside.remove();
+  });
+
+  it('opens a hover panel on keyboard focus only, a focus panel on any focus', async () => {
+    // Focus from a click: happy-dom matches :focus-visible on any focused element
+    const matches = Element.prototype.matches;
+    vi.spyOn(Element.prototype, 'matches').mockImplementation(function (this: Element, selector) {
+      return selector === ':focus-visible' ? false : matches.call(this, selector);
+    });
+    const hover = mountTooltip();
+    reference().focus();
+    await nextTick();
+    expect(tooltip()).toBeNull();
+    hover.unmount();
+
+    mountTooltip({ trigger: 'focus' });
+    reference().focus();
+    await nextTick();
+    expect(tooltip()).not.toBeNull();
   });
 
   it('does not move focus into a panel opened by focus, nor reopen it on Escape', async () => {

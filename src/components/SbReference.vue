@@ -8,7 +8,7 @@ import {
 } from '../composables/useSbFloatingContext';
 import type { SbReferenceProps } from '../types';
 import { POPUP_ROLES } from '../utils/aria';
-import { getTabbables, toElement } from '../utils/dom';
+import { getTabbables, isFocusVisible, toElement } from '../utils/dom';
 import { isTextField, submenuKeys } from '../utils/navigation';
 import { warn } from '../utils/warn';
 
@@ -94,8 +94,12 @@ const opensOnFocus = () => context.trigger.value === 'hover' || context.trigger.
 
 // Not when focus comes back from the panel, e.g. given back as it closes on Escape. Not in a
 // menu, where the arrow keys move focus over the items: a submenu opens on its own key.
+// With `hover`, only keyboard focus: a click focuses the reference too, and the pointer over it
+// already opens the panel after `delay.open`.
 const onFocusin = (event: FocusEvent) => {
-  if (opensOnFocus() && !inMenu(context) && !context.contains(event.relatedTarget)) context.open();
+  if (!opensOnFocus() || inMenu(context) || context.contains(event.relatedTarget)) return;
+  const target = event.target as Element;
+  if (context.trigger.value === 'focus' || isFocusVisible(target)) context.open();
 };
 
 const onFocusout = (event: FocusEvent) => {
