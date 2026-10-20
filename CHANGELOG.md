@@ -97,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### ⚠ BREAKING CHANGES
 
-* `useSbFloatingPanel` is no longer exported; the arrow and `sb-floating-panel-vue/style.css` are removed; `offsetValue` is now `offset` (default 8), `hasResize` is now `matchWidth`, `animation`/`duration` are replaced by `transition`; `SbReference` and `SbFloating` no longer take refs or styles as props. See "Migrating from v2" in the README.
+* `useSbFloatingPanel` is no longer exported; the arrow and `sb-floating-panel-vue/style.css` are removed; `offsetValue` is now `offset` (default 8), `hasResize` is now `matchWidth`, `animation`/`duration` are replaced by `transition`; `SbReference` and `SbFloating` no longer take refs or styles as props. See "From v2 to v3" in MIGRATING.md.
 
 ### Features
 
