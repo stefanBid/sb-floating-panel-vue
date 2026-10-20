@@ -388,6 +388,37 @@ describe('SbFloating', () => {
     host.remove();
   });
 
+  it('enters the open panel from the end with Shift+Tab from what follows the reference', async () => {
+    const host = document.createElement('div');
+    const after = document.createElement('button');
+    document.body.append(host, after);
+    mountPanel(
+      { closeOnFocusOut: false },
+      {
+        attachTo: host,
+        content: () => [
+          h('button', { class: 'first' }, 'First'),
+          h('button', { class: 'last' }, 'Last'),
+        ],
+      }
+    );
+    await openAndSettle();
+    after.focus();
+    expect(panel()).not.toBeNull();
+
+    const shiftTab = await keydown(after, 'Tab', { shiftKey: true });
+    expect(shiftTab.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(document.querySelector('.last'));
+
+    // Left to the browser from anywhere else, and once the panel is closed
+    expect((await keydown(trigger(), 'Tab', { shiftKey: true })).defaultPrevented).toBe(false);
+    await click(trigger());
+    expect(panel()).toBeNull();
+    expect((await keydown(after, 'Tab', { shiftKey: true })).defaultPrevented).toBe(false);
+    after.remove();
+    host.remove();
+  });
+
   it('renders no focus guards when not teleported', async () => {
     mountPanel({ defaultOpen: true }, { floatingProps: { teleport: false } });
     await nextTick();

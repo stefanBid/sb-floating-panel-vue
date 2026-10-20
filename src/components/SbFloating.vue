@@ -177,6 +177,29 @@ const onEndGuardFocus = (event: FocusEvent) => {
   (next ?? reference)?.focus();
 };
 
+// Shift+Tab from what follows the reference in the page goes back into the panel, which comes
+// between them in the Tab order although it is teleported away (it stays open when
+// closeOnFocusOut is false)
+const onDocumentKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Tab' || !event.shiftKey || event.defaultPrevented) return;
+  const reference = context.reference.value;
+  if (!reference || !panel.value || !getTabbables(panel.value).length) return;
+  const target = event.composedPath()[0] ?? event.target;
+  if (target !== getNextTabbable(reference, (el) => context.contains(el))) return;
+  event.preventDefault();
+  focusEdge('last');
+};
+
+watch(
+  hasFocusGuards,
+  (active, _previous, onCleanup) => {
+    if (!active || typeof document === 'undefined') return;
+    document.addEventListener('keydown', onDocumentKeydown);
+    onCleanup(() => document.removeEventListener('keydown', onDocumentKeydown));
+  },
+  { immediate: true }
+);
+
 const items = () => {
   const role = context.navigation.value;
   return panel.value && role ? getItems(panel.value, role) : [];
