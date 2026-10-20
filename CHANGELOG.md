@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.2.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.2.0...v5.2.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* keep disabled links from navigating and let Escape skip panels that ignore it ([#41](https://github.com/stefanBid/sb-floating-panel-vue/issues/41)) ([be5d870](https://github.com/stefanBid/sb-floating-panel-vue/commit/be5d8704344e280ee4f64a0be9ee2114e3d27ae8))
+
 ## [5.2.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.1.3...v5.2.0) (2026-10-20)
 
 
