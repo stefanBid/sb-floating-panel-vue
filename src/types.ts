@@ -1,4 +1,4 @@
-import type { Component, TransitionProps } from 'vue';
+import type { Component, Ref, TransitionProps } from 'vue';
 
 /** Side of the reference the panel is placed on. */
 export type SbSide = 'top' | 'right' | 'bottom' | 'left';
@@ -276,4 +276,28 @@ export interface SbFloatingProps {
    * @default true
    */
   keyboardNavigation?: boolean;
+
+  /**
+   * With `role="menu"` or `role="listbox"`: activating an item (click, Enter or Space) closes
+   * the panel and gives focus back to the reference, after the `click` handler of the item.
+   * - Menu: `menuitem` items, not `menuitemcheckbox` / `menuitemradio` nor submenu triggers.
+   *   The menus it opened from close too.
+   * - Listbox: `option` items, unless the listbox is `aria-multiselectable="true"`.
+   *
+   * Disabled items are left out. Call `event.preventDefault()` in the `click` handler of an
+   * item to keep the panel open.
+   * @default false
+   */
+  closeOnSelect?: boolean;
+}
+
+/**
+ * Returned by `useSbFloating()`: the open state of the closest `SbContainer` and its actions.
+ */
+export interface UseSbFloatingReturn {
+  /** Whether the panel is open. */
+  isOpen: Readonly<Ref<boolean>>;
+  open: () => void;
+  close: () => void;
+  toggle: () => void;
 }

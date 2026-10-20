@@ -1,7 +1,7 @@
 import { config, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, type VNodeChild } from 'vue';
-import { SbContainer, SbFloating, SbReference } from '../src';
+import { SbContainer, SbFloating, SbReference, useSbFloating } from '../src';
 import type { SbContainerExposed, SbContainerProps, SbContainerSlotProps } from '../src';
 
 enableAutoUnmount(afterEach);
@@ -822,7 +822,7 @@ describe('keyboard navigation', () => {
   describe('submenu', () => {
     const after = document.createElement('button');
 
-    const mountNested = (subProps: SbContainerProps = {}) => {
+    const mountNested = (subProps: SbContainerProps = {}, closeOnSelect = false) => {
       const host = document.createElement('div');
       document.body.append(host, after);
       return mount(SbContainer, {
@@ -830,11 +830,11 @@ describe('keyboard navigation', () => {
         slots: {
           default: () => [
             h(SbReference, () => 'File'),
-            h(SbFloating, { role: 'menu' }, () => [
+            h(SbFloating, { role: 'menu', closeOnSelect }, () => [
               h('button', { role: 'menuitem' }, 'New'),
               h(SbContainer, { placement: 'right-start', ...subProps }, () => [
                 h(SbReference, { role: 'menuitem', class: 'sub' }, () => 'Open recent'),
-                h(SbFloating, { role: 'menu', class: 'submenu' }, () =>
+                h(SbFloating, { role: 'menu', class: 'submenu', closeOnSelect }, () =>
                   buttons(['notes.md', 'todo.md'])
                 ),
               ]),
@@ -917,6 +917,24 @@ describe('keyboard navigation', () => {
       document.documentElement.style.direction = '';
     });
 
+    it('closes every menu and focuses the first trigger on a submenu item with closeOnSelect', async () => {
+      mountNested({}, true);
+      trigger().focus();
+      await press('ArrowDown');
+      await settle();
+      await press('ArrowDown');
+      // The submenu trigger opens its submenu, it is not a choice
+      sub().click();
+      await settle();
+      expect(menu()).not.toBeNull();
+      expect(submenu()).not.toBeNull();
+
+      subItems()[1]!.click();
+      await nextTick();
+      expect(document.querySelector('[role="menu"]')).toBeNull();
+      expect(document.activeElement).toBe(trigger());
+    });
+
     it('closes every menu on Tab', async () => {
       mountNested();
       trigger().focus();
@@ -929,6 +947,64 @@ describe('keyboard navigation', () => {
       await press('Tab');
       expect(document.querySelector('[role="menu"]')).toBeNull();
       expect(document.activeElement).toBe(after);
+    });
+  });
+
+  describe('closeOnSelect', () => {
+    const openWith = async (role: string, content: () => VNodeChild, floatingProps = {}) => {
+      const floating = { role, closeOnSelect: true, ...floatingProps };
+      const wrapper = mountPanel({}, { floatingProps: floating, content });
+      trigger().focus();
+      await press('ArrowDown');
+      await settle();
+      return wrapper;
+    };
+
+    it('closes a menu on an activated item and gives focus back to the reference', async () => {
+      await openWith('menu', () => buttons(['Profile', 'Sign out']));
+      items()[1]!.click();
+      await nextTick();
+      expect(menu()).toBeNull();
+      expect(document.activeElement).toBe(trigger());
+    });
+
+    it('keeps the menu open for checkbox, disabled and prevented items, and without the prop', async () => {
+      const wrapper = await openWith('menu', () => [
+        h('button', { role: 'menuitemcheckbox', 'aria-checked': 'false' }, 'Bold'),
+        h('button', { role: 'menuitem', 'aria-disabled': 'true' }, 'Paste'),
+        h('button', { role: 'menuitem', onClick: (e: MouseEvent) => e.preventDefault() }, 'Undo'),
+      ]);
+      for (const item of items()) {
+        item.click();
+        await nextTick();
+      }
+      expect(menu()).not.toBeNull();
+      wrapper.unmount();
+
+      mountMenu();
+      trigger().focus();
+      await press('ArrowDown');
+      await settle();
+      items()[0]!.click();
+      await nextTick();
+      expect(menu()).not.toBeNull();
+    });
+
+    it('closes a listbox on an option, unless it is multiselectable', async () => {
+      const listbox = () => document.querySelector('[role="listbox"]');
+      const wrapper = await openWith('listbox', () => buttons(['Small', 'Large'], 'option'));
+      items()[0]!.click();
+      await nextTick();
+      expect(listbox()).toBeNull();
+      expect(document.activeElement).toBe(trigger());
+      wrapper.unmount();
+
+      await openWith('listbox', () => buttons(['Small', 'Large'], 'option'), {
+        'aria-multiselectable': 'true',
+      });
+      items()[0]!.click();
+      await nextTick();
+      expect(listbox()).not.toBeNull();
     });
   });
 
@@ -1356,6 +1432,27 @@ describe('misuse and edge cases', () => {
 });
 
 describe('API', () => {
+  it('gives components inside the container its open state and actions with useSbFloating', async () => {
+    const MenuItem = defineComponent({
+      setup() {
+        const { isOpen, close } = useSbFloating();
+        return () => h('button', { class: 'item', onClick: close }, `open: ${isOpen.value}`);
+      },
+    });
+    mountPanel({}, { content: () => h('div', [h(MenuItem)]) });
+    await openAndSettle();
+    const item = document.querySelector<HTMLElement>('.item')!;
+    expect(item.textContent).toBe('open: true');
+    item.click();
+    await nextTick();
+    expect(panel()).toBeNull();
+  });
+
+  it('throws when useSbFloating is called outside SbContainer', () => {
+    const Lonely = defineComponent({ setup: () => (useSbFloating(), () => null) });
+    expect(() => mount(Lonely)).toThrow('useSbFloating() must be called');
+  });
+
   it('passes the ids of the panel and the reference to the slot', async () => {
     mountPanel(
       { defaultOpen: true },

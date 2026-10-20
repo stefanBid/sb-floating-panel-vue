@@ -3,6 +3,9 @@ export { default as SbContainer } from './components/SbContainer.vue';
 export { default as SbReference } from './components/SbReference.vue';
 export { default as SbFloating } from './components/SbFloating.vue';
 
+// Composables
+export { useSbFloating } from './composables/useSbFloating';
+
 // Types
 export type {
   SbContainerProps,
@@ -16,4 +19,5 @@ export type {
   SbAlignment,
   SbStrategy,
   SbFloatingRole,
+  UseSbFloatingReturn,
 } from './types';
