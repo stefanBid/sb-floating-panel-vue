@@ -19,7 +19,7 @@ import {
   useSbFloatingContext,
   type SbFloatingContext,
 } from '../composables/useSbFloatingContext';
-import type { SbFloatingProps } from '../types';
+import type { SbCloseReason, SbFloatingProps } from '../types';
 import { POPUP_ROLES } from '../utils/aria';
 import {
   canFocus,
@@ -295,10 +295,14 @@ const menuChain = () => {
 
 // Closes the containers at once and moves focus to `target`, instead of each one giving it
 // back to its own reference
-const closeChain = (chain: SbFloatingContext[], target: HTMLElement | null | undefined) => {
+const closeChain = (
+  chain: SbFloatingContext[],
+  target: HTMLElement | null | undefined,
+  reason: SbCloseReason
+) => {
   for (const container of chain) {
     container.skipFocusReturn = true;
-    container.close();
+    container.setOpen(false, reason);
   }
   target?.focus({ preventScroll: true });
 };
@@ -311,7 +315,7 @@ const leaveMenu = (backwards: boolean) => {
   const target = backwards
     ? reference
     : ((reference && getNextTabbable(reference, (el) => root.contains(el))) ?? reference);
-  closeChain(chain, target);
+  closeChain(chain, target, 'focus-out');
 };
 
 // closeOnSelect: activating a menu item or a listbox option closes the panel (a menu: with the
@@ -326,7 +330,7 @@ const onClick = (event: MouseEvent) => {
   if (!item || item.closest(`[role="${role}"]`) !== el || item.matches(NOT_SELECTABLE)) return;
   if (role === 'listbox' && el.getAttribute('aria-multiselectable') === 'true') return;
   const chain = role === 'menu' ? menuChain() : [context];
-  closeChain(chain, chain[chain.length - 1]!.reference.value);
+  closeChain(chain, chain[chain.length - 1]!.reference.value, 'select');
 };
 
 const onKeydown = (event: KeyboardEvent) => {
@@ -359,7 +363,7 @@ const onKeydown = (event: KeyboardEvent) => {
   ) {
     // Closing a submenu gives focus back to its trigger, an item of the parent menu
     event.preventDefault();
-    context.close();
+    context.setOpen(false, 'escape');
     return;
   } else if (
     event.key.length === 1 &&
