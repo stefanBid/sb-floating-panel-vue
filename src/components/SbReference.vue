@@ -67,9 +67,13 @@ const isTooltip = computed(() => floatingRole.value === 'tooltip');
 // Hover and focus triggers: keyboard focus opens the panel at once, focus moving outside closes it
 const opensOnFocus = () => context.trigger.value === 'hover' || context.trigger.value === 'focus';
 
-// Not when focus comes back from the panel, e.g. given back as it closes on Escape
+// A submenu trigger is an item of its parent menu
+const inMenu = () => context.parent?.navigation.value === 'menu';
+
+// Not when focus comes back from the panel, e.g. given back as it closes on Escape. Not in a
+// menu, where the arrow keys move focus over the items: a submenu opens on its own key.
 const onFocusin = (event: FocusEvent) => {
-  if (opensOnFocus() && !context.contains(event.relatedTarget)) context.open();
+  if (opensOnFocus() && !inMenu() && !context.contains(event.relatedTarget)) context.open();
 };
 
 const onFocusout = (event: FocusEvent) => {
@@ -90,7 +94,7 @@ const focusPanel = (event: KeyboardEvent) => {
 // the arrow pointing to the submenu opens it instead.
 const arrowEdge = (event: KeyboardEvent) => {
   if (!context.navigation.value || disabled.value || context.trigger.value === 'manual') return;
-  if (context.parent?.navigation.value === 'menu') {
+  if (inMenu()) {
     const target = event.currentTarget as Element;
     return event.key === submenuKeys(target).open ? 'first' : undefined;
   }
@@ -99,8 +103,7 @@ const arrowEdge = (event: KeyboardEvent) => {
 
 const onKeydown = (event: KeyboardEvent) => {
   // From a submenu trigger, Tab leaves the parent menu (handled by its panel)
-  const inMenu = context.parent?.navigation.value === 'menu';
-  if (event.key === 'Tab' && !event.shiftKey && isOpen.value && !inMenu) {
+  if (event.key === 'Tab' && !event.shiftKey && isOpen.value && !inMenu()) {
     focusPanel(event);
     return;
   }

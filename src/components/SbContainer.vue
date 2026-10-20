@@ -72,8 +72,12 @@ const toggle = () => setOpen(!isOpen.value);
 
 // The pointer moves from the reference onto the panel (or back) before the close delay ends
 const hover = (event: PointerEvent) => {
-  if (props.trigger !== 'hover' || event.pointerType === 'touch') return;
-  const inside = event.type === 'pointerenter';
+  if (event.pointerType === 'touch') return;
+  // A nested panel is teleported out of this one but is part of it: the pointer entering or
+  // leaving it enters or leaves the parent too
+  parent?.hover(event);
+  if (props.trigger !== 'hover') return;
+  const inside = event.type === 'pointerenter' || context.contains(event.relatedTarget);
   clearTimeout(hoverTimer);
   if (inside === isOpen.value) return;
   const { delay } = props;
