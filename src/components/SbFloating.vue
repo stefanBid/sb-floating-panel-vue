@@ -11,17 +11,11 @@ import {
   type CSSProperties,
   type TransitionProps,
 } from 'vue';
-import { claimPart, POPUP_ROLES, toElement, useSbFloatingContext } from '../context';
-import {
-  FOCUS_GUARD_ATTRIBUTE,
-  getItems,
-  getNextTabbable,
-  getTabbables,
-  isNavigableRole,
-  isTextField,
-  submenuKeys,
-} from '../focus';
+import { claimPart, useSbFloatingContext } from '../composables/useSbFloatingContext';
 import type { SbFloatingProps } from '../types';
+import { POPUP_ROLES } from '../utils/aria';
+import { FOCUS_GUARD_ATTRIBUTE, getNextTabbable, getTabbables, toElement } from '../utils/dom';
+import { getItems, isNavigableRole, isTextField, submenuKeys } from '../utils/navigation';
 
 defineOptions({ inheritAttrs: false });
 
