@@ -1,6 +1,9 @@
 <script lang="ts">
 // Open containers, most recent last: Escape closes only one of them
 const openStack: SbFloatingContext[] = [];
+
+// Default of the `delay` prop, also used for a key missing from an object
+const HOVER_DELAY = { open: 300, close: 150 };
 </script>
 
 <script setup lang="ts">
@@ -33,7 +36,7 @@ const props = withDefaults(defineProps<Omit<SbContainerProps, 'open'>>(), {
   defaultOpen: false,
   disabled: false,
   trigger: 'click',
-  delay: () => ({ open: 300, close: 150 }),
+  delay: () => ({ ...HOVER_DELAY }),
   closeOnEscape: true,
   closeOnClickOutside: true,
   closeOnFocusOut: true,
@@ -81,8 +84,8 @@ const hover = (event: PointerEvent) => {
   clearTimeout(hoverTimer);
   if (inside === isOpen.value) return;
   const { delay } = props;
-  const delays = typeof delay === 'number' ? { open: delay, close: delay } : delay;
-  const ms = (inside ? delays.open : delays.close) ?? (inside ? 300 : 150);
+  const key = inside ? 'open' : 'close';
+  const ms = typeof delay === 'number' ? delay : (delay[key] ?? HOVER_DELAY[key]);
   hoverTimer = setTimeout(() => setOpen(inside), ms);
 };
 

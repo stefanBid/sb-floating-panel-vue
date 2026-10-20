@@ -14,6 +14,7 @@ import {
 } from 'vue';
 import {
   claimPart,
+  inMenu,
   useSbFloatingContext,
   type SbFloatingContext,
 } from '../composables/useSbFloatingContext';
@@ -258,7 +259,7 @@ const findByText = (list: HTMLElement[], index: number, key: string) => {
 // A menu and the menus it opened from, outermost last
 const menuChain = () => {
   const chain = [context];
-  while (chain[chain.length - 1]!.parent?.navigation.value === 'menu') {
+  while (inMenu(chain[chain.length - 1]!)) {
     chain.push(chain[chain.length - 1]!.parent!);
   }
   return chain;
@@ -324,7 +325,7 @@ const onKeydown = (event: KeyboardEvent) => {
     return;
   } else if (
     role === 'menu' &&
-    context.parent?.navigation.value === 'menu' &&
+    inMenu(context) &&
     panel.value &&
     event.key === submenuKeys(panel.value).close
   ) {
