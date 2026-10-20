@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.1.3](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.1.2...v5.1.3) (2026-10-20)
+
+
+### Bug Fixes
+
+* open hover panels at once on keyboard focus only ([#36](https://github.com/stefanBid/sb-floating-panel-vue/issues/36)) ([af668ec](https://github.com/stefanBid/sb-floating-panel-vue/commit/af668ec80f347bdd24fb86f6daa06e674db9a9c0))
+
 ## [5.1.2](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.1.1...v5.1.2) (2026-10-20)
 
 
