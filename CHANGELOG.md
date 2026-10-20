@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.0.3](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.0.2...v5.0.3) (2026-10-20)
+
+
+### Bug Fixes
+
+* warn about misused tooltips, menus and listboxes ([#26](https://github.com/stefanBid/sb-floating-panel-vue/issues/26)) ([8648b64](https://github.com/stefanBid/sb-floating-panel-vue/commit/8648b6469feceffe284d1940e8b3ef7bc6ec24fe))
+
 ## [5.0.2](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.0.1...v5.0.2) (2026-10-20)
 
 
