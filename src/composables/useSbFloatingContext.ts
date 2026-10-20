@@ -1,5 +1,5 @@
 import { inject, type InjectionKey, type Ref } from 'vue';
-import type { SbTrigger } from '../types';
+import type { SbCloseReason, SbOpenReason, SbTrigger } from '../types';
 import { getNextTabbable } from '../utils/dom';
 import type { NavigableRole } from '../utils/navigation';
 import { warn } from '../utils/warn';
@@ -32,9 +32,16 @@ export interface SbFloatingContext extends FloatingPanel {
   parts: { reference: number; floating: number };
   /** Set while the container unmounts, when its parts must not change the open state. */
   isUnmounting: boolean;
+  /** Public actions: their reason is `api`. */
   open: () => void;
   close: () => void;
   toggle: () => void;
+  /** Opens or closes the panel from an interaction of the components, with its reason. */
+  setOpen: {
+    (value: true, reason: SbOpenReason): void;
+    (value: false, reason: SbCloseReason): void;
+    (value: boolean, reason: SbOpenReason & SbCloseReason): void;
+  };
   /** Pointer entering or leaving the reference or the panel, for the `hover` trigger. */
   hover: (event: PointerEvent) => void;
   /** Whether an event target is inside the reference, the panel or a nested container. */

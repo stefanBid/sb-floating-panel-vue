@@ -10,6 +10,7 @@ const HOVER_DELAY = { open: 300, close: 150 };
 import {
   computed,
   inject,
+  nextTick,
   onBeforeUnmount,
   onScopeDispose,
   provide,
@@ -24,7 +25,13 @@ import {
   type SbFloatingContext,
 } from '../composables/useSbFloatingContext';
 import { useSbFloatingPanel } from '../composables/useSbFloatingPanel';
-import type { SbContainerExposed, SbContainerProps, SbContainerSlotProps } from '../types';
+import type {
+  SbCloseReason,
+  SbContainerExposed,
+  SbContainerProps,
+  SbContainerSlotProps,
+  SbOpenReason,
+} from '../types';
 import { isFocusable } from '../utils/dom';
 import type { NavigableRole } from '../utils/navigation';
 
@@ -51,9 +58,9 @@ const model = defineModel<boolean | undefined>('open', { default: undefined });
 
 const emit = defineEmits<{
   /** The panel has opened. */
-  open: [];
+  open: [reason: SbOpenReason];
   /** The panel has closed. */
-  close: [];
+  close: [reason: SbCloseReason];
 }>();
 
 defineSlots<{
@@ -67,15 +74,23 @@ const isOpen = computed(() => !props.disabled && (model.value ?? defaultOpen));
 let hoverTimer: ReturnType<typeof setTimeout> | undefined;
 onScopeDispose(() => clearTimeout(hoverTimer));
 
-const setOpen = (value: boolean) => {
+// Reason of the change asked last, for the `open` / `close` event. Dropped after the update,
+// so a change the parent of `v-model:open` refuses does not lend it to a later one.
+let reason: SbOpenReason | SbCloseReason | undefined;
+
+const setOpen = ((value: boolean, why: SbOpenReason | SbCloseReason) => {
   // Opening or closing in any way replaces a pending hover
   clearTimeout(hoverTimer);
   if (value && props.disabled) return;
-  if (value !== isOpen.value) model.value = value;
-};
-const open = () => setOpen(true);
-const close = () => setOpen(false);
-const toggle = () => setOpen(!isOpen.value);
+  if (value === isOpen.value) return;
+  reason = why;
+  model.value = value;
+  // After the update this change queued, where the watcher below reads it
+  void nextTick(() => (reason = undefined));
+}) as SbFloatingContext['setOpen'];
+const open = () => setOpen(true, 'api');
+const close = () => setOpen(false, 'api');
+const toggle = () => setOpen(!isOpen.value, 'api');
 
 // The pointer moves from the reference onto the panel (or back) before the close delay ends
 const hover = (event: PointerEvent) => {
@@ -90,7 +105,7 @@ const hover = (event: PointerEvent) => {
   const { delay } = props;
   const key = inside ? 'open' : 'close';
   const ms = typeof delay === 'number' ? delay : (delay[key] ?? HOVER_DELAY[key]);
-  hoverTimer = setTimeout(() => setOpen(inside), ms);
+  hoverTimer = setTimeout(() => setOpen(inside, 'hover'), ms);
 };
 
 const panel = useSbFloatingPanel({
@@ -128,6 +143,7 @@ const context: SbFloatingContext = {
   open,
   close,
   toggle,
+  setOpen,
   hover,
   contains: (target) => {
     if (!(target instanceof Node)) return false;
@@ -166,14 +182,14 @@ const onKeydown = (event: KeyboardEvent) => {
   if (!props.closeOnEscape || event.defaultPrevented || event.isComposing) return;
   // Stops a surrounding native <dialog> from closing too
   event.preventDefault();
-  close();
+  setOpen(false, 'escape');
 };
 
 const closeOutside = (target: EventTarget | null) => {
   if (context.contains(target)) return;
   // The browser is about to focus what was pressed: leave focus there
   context.skipFocusReturn = isFocusable(target);
-  close();
+  setOpen(false, 'outside');
 };
 
 let cancelTouchClick: (() => void) | undefined;
@@ -202,7 +218,7 @@ const onPointerdown = (event: PointerEvent) => {
 // A non-modal panel closes when keyboard focus moves on to the rest of the page
 const onFocusin = (event: FocusEvent) => {
   if (!props.closeOnFocusOut) return;
-  if (!context.contains(event.composedPath()[0] ?? event.target)) close();
+  if (!context.contains(event.composedPath()[0] ?? event.target)) setOpen(false, 'focus-out');
 };
 
 // Document listeners only while the panel is open
@@ -225,11 +241,17 @@ watch(
   { immediate: true }
 );
 
-watch(isOpen, (value) => (value ? emit('open') : emit('close')));
+watch(isOpen, (value) => {
+  // Not asked by the components: `v-model:open` or the `disabled` prop
+  const why = reason ?? (!value && props.disabled ? 'disabled' : 'api');
+  reason = undefined;
+  if (value) emit('open', why as SbOpenReason);
+  else emit('close', why as SbCloseReason);
+});
 
 // hideWhenDetached 'close': a panel whose reference is scrolled out of view closes
 watch(panel.referenceHidden, (hidden) => {
-  if (hidden && props.hideWhenDetached === 'close') close();
+  if (hidden && props.hideWhenDetached === 'close') setOpen(false, 'detached');
 });
 
 watch(

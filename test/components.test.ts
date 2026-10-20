@@ -1615,3 +1615,105 @@ describe('API', () => {
     host.remove();
   });
 });
+
+describe('open and close reasons', () => {
+  const track = () => {
+    const log: string[] = [];
+    return {
+      log,
+      props: {
+        onOpen: (reason: string) => log.push(`open:${reason}`),
+        onClose: (reason: string) => log.push(`close:${reason}`),
+      },
+    };
+  };
+  const pointer = async (el: Element, type: 'pointerenter' | 'pointerleave') => {
+    el.dispatchEvent(new PointerEvent(type, { pointerType: 'mouse' }));
+    await new Promise((resolve) => setTimeout(resolve));
+    await nextTick();
+  };
+
+  it('tells the trigger, Escape, an outside press and focus moving out', async () => {
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    const { log, props } = track();
+    mountPanel(props);
+
+    await click(trigger());
+    await keydown(document, 'Escape');
+    await click(trigger());
+    await click(trigger());
+    await click(trigger());
+    await click(outside);
+    await click(trigger());
+    outside.focus();
+    await nextTick();
+    expect(log).toEqual([
+      'open:trigger',
+      'close:escape',
+      'open:trigger',
+      'close:trigger',
+      'open:trigger',
+      'close:outside',
+      'open:trigger',
+      'close:focus-out',
+    ]);
+    outside.remove();
+  });
+
+  it('tells the pointer and focus of the hover trigger', async () => {
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    const { log, props } = track();
+    mountPanel({ trigger: 'hover', delay: 0, ...props });
+
+    await pointer(trigger(), 'pointerenter');
+    await pointer(trigger(), 'pointerleave');
+    trigger().focus();
+    await nextTick();
+    outside.focus();
+    await nextTick();
+    expect(log).toEqual(['open:hover', 'close:hover', 'open:focus', 'close:focus-out']);
+    outside.remove();
+  });
+
+  it('tells an item selected with closeOnSelect', async () => {
+    const { log, props } = track();
+    mountPanel(props, {
+      floatingProps: { role: 'menu', closeOnSelect: true },
+      content: () => h('button', { role: 'menuitem', class: 'item' }, 'Copy'),
+    });
+    await openAndSettle();
+    document.querySelector<HTMLElement>('.item')!.click();
+    await nextTick();
+    expect(log).toEqual(['open:trigger', 'close:select']);
+  });
+
+  it('tells the api, the disabled prop and a detached reference', async () => {
+    const api = track();
+    const wrapper = mountPanel(api.props);
+    const exposed = wrapper.vm as unknown as SbContainerExposed;
+    exposed.open();
+    await nextTick();
+    await wrapper.setProps({ disabled: true });
+    expect(api.log).toEqual(['open:api', 'close:disabled']);
+    wrapper.unmount();
+
+    const detached = track();
+    mountPanel({ hideWhenDetached: 'close', defaultOpen: true, ...detached.props });
+    await flushPromises();
+    expect(detached.log).toEqual(['close:detached']);
+  });
+
+  it('does not lend the reason of a change the parent refused to a later one', async () => {
+    const { log, props } = track();
+    // The click asks to open, the parent of v-model:open ignores it
+    const wrapper = mountPanel({ open: false, 'onUpdate:open': () => {}, ...props });
+    await click(trigger());
+    await flushPromises();
+    expect(panel()).toBeNull();
+
+    await wrapper.setProps({ open: true });
+    expect(log).toEqual(['open:api']);
+  });
+});

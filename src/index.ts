@@ -19,5 +19,7 @@ export type {
   SbAlignment,
   SbStrategy,
   SbFloatingRole,
+  SbOpenReason,
+  SbCloseReason,
   UseSbFloatingReturn,
 } from './types';

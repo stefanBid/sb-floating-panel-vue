@@ -63,7 +63,7 @@ onBeforeUnmount(() => {
   // A panel left without its reference has nothing to be anchored to nor to give focus back to
   if (!context.parts.reference && !context.isUnmounting) {
     context.skipFocusReturn = moveFocusOut(context, false);
-    context.close();
+    context.setOpen(false, 'api');
   }
 });
 
@@ -82,8 +82,8 @@ const setReference = (el: unknown) => {
 const onClick = () => {
   if (context.trigger.value !== 'click') return;
   // A click in a text field places the caret: it opens the panel, never closes it
-  if (isTextField(context.reference.value)) context.open();
-  else context.toggle();
+  if (isTextField(context.reference.value)) context.setOpen(true, 'trigger');
+  else context.setOpen(!isOpen.value, 'trigger');
 };
 
 // A tooltip describes its reference, it does not expand it (w3.org/WAI/ARIA/apg/patterns/tooltip)
@@ -99,11 +99,11 @@ const opensOnFocus = () => context.trigger.value === 'hover' || context.trigger.
 const onFocusin = (event: FocusEvent) => {
   if (!opensOnFocus() || inMenu(context) || context.contains(event.relatedTarget)) return;
   const target = event.target as Element;
-  if (context.trigger.value === 'focus' || isFocusVisible(target)) context.open();
+  if (context.trigger.value === 'focus' || isFocusVisible(target)) context.setOpen(true, 'focus');
 };
 
 const onFocusout = (event: FocusEvent) => {
-  if (opensOnFocus() && !context.contains(event.relatedTarget)) context.close();
+  if (opensOnFocus() && !context.contains(event.relatedTarget)) context.setOpen(false, 'focus-out');
 };
 
 // The panel is teleported to the end of the page: Tab from the reference goes into it
@@ -137,7 +137,7 @@ const onKeydown = (event: KeyboardEvent) => {
   if (edge) {
     event.preventDefault();
     context.focusRequest.value = edge;
-    context.open();
+    context.setOpen(true, 'trigger');
     return;
   }
   if (isNative() || (event.key !== 'Enter' && event.key !== ' ')) return;

@@ -32,6 +32,39 @@ export type SbFloatingRole =
 export type SbTrigger = 'click' | 'hover' | 'focus' | 'manual';
 
 /**
+ * Why the panel opened, passed to the `open` event of `SbContainer`.
+ * - `trigger`: a click on the reference, or Enter, Space or an arrow key on it.
+ * - `hover`: the pointer over the reference (`hover` trigger).
+ * - `focus`: focus on the reference (`hover` and `focus` triggers).
+ * - `api`: `v-model:open`, the slot props, the exposed methods or `useSbFloating()`.
+ */
+export type SbOpenReason = 'trigger' | 'hover' | 'focus' | 'api';
+
+/**
+ * Why the panel closed, passed to the `close` event of `SbContainer`.
+ * - `trigger`: a click on the reference, or Enter or Space on it.
+ * - `hover`: the pointer left the reference and the panel (`hover` trigger).
+ * - `focus-out`: focus moved outside the reference and the panel, e.g. Tab out of a menu.
+ * - `escape`: the Escape key, or the arrow key that closes a submenu.
+ * - `outside`: a press outside the reference and the panel.
+ * - `select`: an item was activated with `closeOnSelect`.
+ * - `detached`: the reference was scrolled out of view, with `hideWhenDetached: 'close'`.
+ * - `disabled`: the container was disabled.
+ * - `api`: `v-model:open`, the slot props, the exposed methods, `useSbFloating()`, or the
+ *   reference unmounting.
+ */
+export type SbCloseReason =
+  | 'trigger'
+  | 'hover'
+  | 'focus-out'
+  | 'escape'
+  | 'outside'
+  | 'select'
+  | 'detached'
+  | 'disabled'
+  | 'api';
+
+/**
  * Props for the `SbContainer` component: positioning, open state and interaction.
  */
 export interface SbContainerProps {
