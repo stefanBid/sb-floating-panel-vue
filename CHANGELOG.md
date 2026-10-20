@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.2.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.1.3...v5.2.0) (2026-10-20)
+
+
+### Features
+
+* pass the reason to the open and close events ([#38](https://github.com/stefanBid/sb-floating-panel-vue/issues/38)) ([d8bab43](https://github.com/stefanBid/sb-floating-panel-vue/commit/d8bab43dfa82fd4e5d90ef55a135ec210617cc16))
+
 ## [5.1.3](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.1.2...v5.1.3) (2026-10-20)
 
 
