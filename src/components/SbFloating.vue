@@ -3,6 +3,7 @@ import {
   computed,
   nextTick,
   onBeforeUnmount,
+  onMounted,
   onScopeDispose,
   ref,
   useAttrs,
@@ -14,8 +15,21 @@ import {
 import { claimPart, useSbFloatingContext } from '../composables/useSbFloatingContext';
 import type { SbFloatingProps } from '../types';
 import { POPUP_ROLES } from '../utils/aria';
-import { FOCUS_GUARD_ATTRIBUTE, getNextTabbable, getTabbables, toElement } from '../utils/dom';
-import { getItems, isNavigableRole, isTextField, submenuKeys } from '../utils/navigation';
+import {
+  canFocus,
+  FOCUS_GUARD_ATTRIBUTE,
+  getNextTabbable,
+  getTabbables,
+  toElement,
+} from '../utils/dom';
+import {
+  getItems,
+  isNavigableRole,
+  isTextField,
+  submenuKeys,
+  type NavigableRole,
+} from '../utils/navigation';
+import { warn } from '../utils/warn';
 
 defineOptions({ inheritAttrs: false });
 
@@ -46,6 +60,14 @@ watchEffect(() => {
   context.floatingRole.value = props.role;
   context.navigation.value =
     props.keyboardNavigation && isNavigableRole(props.role) ? props.role : null;
+});
+
+onMounted(() => {
+  if (props.role !== 'tooltip' || context.trigger.value !== 'click') return;
+  warn(
+    '<SbFloating role="tooltip"> opens on click: a tooltip shows on hover and focus. Set ' +
+      'trigger="hover" or "focus" on SbContainer, or use another role for a panel opened by click.'
+  );
 });
 
 // The wrapper stays mounted until the leave transition of the panel has finished,
@@ -154,11 +176,35 @@ const items = () => {
   return panel.value && role ? getItems(panel.value, role) : [];
 };
 
+const ITEM_ROLES: Record<NavigableRole, string> = {
+  menu: 'role="menuitem", "menuitemcheckbox" or "menuitemradio"',
+  listbox: 'role="option"',
+};
+
+// Checked when the arrow keys move to an item, where a misuse shows (not on open, when the
+// items may still be loading): warned once per panel
+let warnedItems = false;
+const checkItems = (list: HTMLElement[]) => {
+  const role = context.navigation.value;
+  if (warnedItems || !role) return;
+  const problem = !list.length
+    ? `has no items the arrow keys can move to: items need ${ITEM_ROLES[role]} and must not ` +
+      'be disabled.'
+    : !list.every(canFocus)
+      ? 'has items that cannot take focus, so the arrow keys cannot move to them: make each ' +
+        'one a button, or give it tabindex="-1".'
+      : null;
+  if (!problem) return;
+  warnedItems = true;
+  warn(`<SbFloating role="${role}"> ${problem}`);
+};
+
 // A listbox opens on its selected option; the arrow keys on the reference ask for an edge item
 const focusPanel = (edge: 'first' | 'last' | null) => {
   const el = panel.value;
   if (!el) return;
   const list = items();
+  if (edge) checkItems(list);
   const selected = list.find((item) => item.getAttribute('aria-selected') === 'true');
   const target =
     selected ??
@@ -224,6 +270,8 @@ const onKeydown = (event: KeyboardEvent) => {
   // A menu wraps around, a listbox stops at its ends like a native select
   const wrap = role === 'menu';
   let next: HTMLElement | undefined;
+
+  if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) checkItems(list);
 
   if (event.key === 'ArrowDown') next = list[index < last ? index + 1 : wrap ? 0 : last];
   else if (event.key === 'ArrowUp')

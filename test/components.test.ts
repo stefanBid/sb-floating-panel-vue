@@ -1239,6 +1239,52 @@ describe('misuse and edge cases', () => {
     expect(spy.mock.calls[0]![0]).toContain('combobox');
   });
 
+  it('warns about a tooltip opened by click', () => {
+    const spy = warnings();
+    mountPanel({}, { floatingProps: { role: 'tooltip' } }).unmount();
+    mountPanel({ trigger: 'hover' }, { floatingProps: { role: 'tooltip' } });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0]![0]).toContain('<SbFloating role="tooltip"> opens on click');
+  });
+
+  it('warns once when the arrow keys find no items, or items that cannot take focus', async () => {
+    const spy = warnings();
+    const arrowDown = async (role: string, content: () => VNodeChild) => {
+      const wrapper = mountPanel({}, { floatingProps: { role }, content });
+      trigger().focus();
+      await keydown(trigger(), 'ArrowDown');
+      await flushPromises();
+      await nextTick();
+      await keydown(document.activeElement!, 'ArrowDown');
+      await keydown(document.activeElement!, 'End');
+      wrapper.unmount();
+    };
+
+    await arrowDown('listbox', () => h('p', 'Loading…'));
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0]![0]).toContain('<SbFloating role="listbox"> has no items');
+
+    await arrowDown('menu', () => [
+      h('div', { role: 'menuitem' }, 'Copy'),
+      h('div', { role: 'menuitem' }, 'Paste'),
+    ]);
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy.mock.calls[1]![0]).toContain('cannot take focus');
+
+    await arrowDown('menu', () => [
+      h('button', { role: 'menuitem' }, 'Copy'),
+      h('div', { role: 'menuitem', tabindex: -1 }, 'Paste'),
+    ]);
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not warn about an empty listbox opened without the arrow keys', async () => {
+    const spy = warnings();
+    mountPanel({}, { floatingProps: { role: 'listbox' }, content: () => h('p', 'Loading…') });
+    await openAndSettle();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   it('does not warn in production', async () => {
     const spy = warnings();
     vi.stubEnv('NODE_ENV', 'production');

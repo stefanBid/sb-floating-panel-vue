@@ -32,6 +32,9 @@ export function isFocusable(target: EventTarget | null): boolean {
   return !!el && !el.closest('[inert]');
 }
 
+/** Whether `el` itself can take focus, with Tab or from script. */
+export const canFocus = (el: Element) => el.matches(FOCUSABLE) && !el.closest('[inert]');
+
 /** Elements reachable with Tab inside `root`, in document order (focus guards excluded). */
 export function getTabbables(root: ParentNode): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(isTabbable);
