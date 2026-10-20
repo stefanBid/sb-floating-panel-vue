@@ -23,8 +23,9 @@ export type SbFloatingRole =
  * How the reference opens the floating panel.
  * - `click`: clicking (or pressing Enter/Space on) `SbReference` toggles the panel.
  * - `hover`: the pointer over `SbReference` opens the panel after `delay.open`, keyboard focus
- *   opens it at once. It closes `delay.close` after the pointer leaves both the reference and the
- *   panel, so the pointer can move onto the panel, and when focus leaves them. Touch has no hover.
+ *   (`:focus-visible`, not the focus of a click) opens it at once. It closes `delay.close` after
+ *   the pointer leaves both the reference and the panel, so the pointer can move onto the panel,
+ *   and when focus leaves them. Touch has no hover.
  * - `focus`: focus on `SbReference` opens the panel, focus moving elsewhere closes it.
  * - `manual`: the panel opens only through `v-model:open`, the slot props or the exposed methods.
  */

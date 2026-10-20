@@ -32,6 +32,15 @@ export function isFocusable(target: EventTarget | null): boolean {
   return !!el && !el.closest('[inert]');
 }
 
+/** Whether focus on `el` came from the keyboard (`:focus-visible`); true where it is unsupported. */
+export function isFocusVisible(el: Element): boolean {
+  try {
+    return el.matches(':focus-visible');
+  } catch {
+    return true;
+  }
+}
+
 /** Whether `el` itself can take focus, with Tab or from script. */
 export const canFocus = (el: Element) => el.matches(FOCUSABLE) && !el.closest('[inert]');
 
