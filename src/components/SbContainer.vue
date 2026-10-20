@@ -1,6 +1,6 @@
 <script lang="ts">
 // Open containers, most recent last: Escape closes only one of them
-const openStack: SbFloatingContext[] = [];
+const openStack: { context: SbFloatingContext; closeOnEscape: () => boolean }[] = [];
 
 // Default of the `delay` prop, also used for a key missing from an object
 const HOVER_DELAY = { open: 300, close: 150 };
@@ -169,17 +169,19 @@ onBeforeUnmount(() => {
 });
 
 // The most recently opened panel that has focus, else the most recently opened one:
-// two sibling panels stay open together when closeOnClickOutside is false
+// two sibling panels stay open together when closeOnClickOutside is false. Panels with
+// closeOnEscape false are skipped, so Escape still closes the others.
 const escapeTarget = (event: KeyboardEvent) => {
   const target = event.composedPath()[0] ?? event.target;
-  const withFocus = openStack.findLast((container) => container.contains(target));
-  return withFocus ?? openStack[openStack.length - 1];
+  const closable = openStack.filter((entry) => entry.closeOnEscape());
+  const withFocus = closable.findLast((entry) => entry.context.contains(target));
+  return (withFocus ?? closable[closable.length - 1])?.context;
 };
 
 const onKeydown = (event: KeyboardEvent) => {
   if (event.key !== 'Escape' || escapeTarget(event) !== context) return;
   // Already handled by a widget inside (e.g. a combobox), or ending an IME composition
-  if (!props.closeOnEscape || event.defaultPrevented || event.isComposing) return;
+  if (event.defaultPrevented || event.isComposing) return;
   // Stops a surrounding native <dialog> from closing too
   event.preventDefault();
   setOpen(false, 'escape');
@@ -226,7 +228,8 @@ watch(
   isOpen,
   (value, _previous, onCleanup) => {
     if (!value || typeof document === 'undefined') return;
-    openStack.push(context);
+    const entry = { context, closeOnEscape: () => props.closeOnEscape };
+    openStack.push(entry);
     document.addEventListener('keydown', onKeydown);
     document.addEventListener('pointerdown', onPointerdown, true);
     document.addEventListener('focusin', onFocusin);
@@ -235,7 +238,7 @@ watch(
       document.removeEventListener('pointerdown', onPointerdown, true);
       document.removeEventListener('focusin', onFocusin);
       cancelTouchClick?.();
-      openStack.splice(openStack.indexOf(context), 1);
+      openStack.splice(openStack.indexOf(entry), 1);
     });
   },
   { immediate: true }

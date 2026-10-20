@@ -79,7 +79,11 @@ const setReference = (el: unknown) => {
   context.reference.value = toElement(el);
 };
 
-const onClick = () => {
+const onClick = (event?: MouseEvent) => {
+  // A link with `aria-disabled` stays focusable and clickable: it must not navigate
+  if (disabled.value && context.reference.value instanceof HTMLAnchorElement) {
+    event?.preventDefault();
+  }
   if (context.trigger.value !== 'click') return;
   // A click in a text field places the caret: it opens the panel, never closes it
   if (isTextField(context.reference.value)) context.setOpen(true, 'trigger');
