@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.1.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.1.0...v5.1.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* let Shift+Tab enter an open panel from what follows the reference ([#32](https://github.com/stefanBid/sb-floating-panel-vue/issues/32)) ([003d081](https://github.com/stefanBid/sb-floating-panel-vue/commit/003d081a8dc9bd0ad5dcf896700837b3f9590878))
+
 ## [5.1.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.0.3...v5.1.0) (2026-10-20)
 
 
