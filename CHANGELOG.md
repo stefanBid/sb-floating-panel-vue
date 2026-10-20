@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.0.2](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.0.1...v5.0.2) (2026-10-20)
+
+
+### Bug Fixes
+
+* keep a text field reference a text field ([#24](https://github.com/stefanBid/sb-floating-panel-vue/issues/24)) ([929ae48](https://github.com/stefanBid/sb-floating-panel-vue/commit/929ae48b2d8ab796040e2271658406c86b4b1fa7))
+
 ## [5.0.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.0.0...v5.0.1) (2026-10-20)
 
 
