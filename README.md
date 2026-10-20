@@ -123,34 +123,17 @@ Holds the state and the positioning. Renders no element of its own, only its slo
 | `closeOnClickOutside` | `boolean` | `true` | Closes on a pointer press outside the reference and the panel (on touch, on the tap's click) |
 | `closeOnFocusOut` | `boolean` | `true` | Closes when keyboard focus moves outside the reference and the panel |
 
-| Event         | Payload         | Description                   |
-| ------------- | --------------- | ----------------------------- |
-| `update:open` | `boolean`       | Used by `v-model:open`        |
-| `open`        | `SbOpenReason`  | The panel has opened, and why |
-| `close`       | `SbCloseReason` | The panel has closed, and why |
+| Event         | Payload                      | Description            |
+| ------------- | ---------------------------- | ---------------------- |
+| `update:open` | `boolean`                    | Used by `v-model:open` |
+| `open`        | `SbOpenReason` (deprecated)  | The panel has opened   |
+| `close`       | `SbCloseReason` (deprecated) | The panel has closed   |
 
-The reason tells what opened or closed the panel, e.g. for analytics or to react only to a dismissal:
+The reason passed to `open` and `close` (what opened or closed the panel) is deprecated and removed in v6; the events stay. Its values are described on the `SbOpenReason` and `SbCloseReason` types.
 
-| Reason | `open` | `close` |
-| --- | --- | --- |
-| `trigger` | Click on the reference, Enter, Space or an arrow key on it | Click on the reference, Enter or Space on it |
-| `hover` | Pointer over the reference (`hover` trigger) | Pointer left the reference and the panel (`hover` trigger) |
-| `focus` | Focus on the reference (`hover` and `focus` triggers) | — |
-| `focus-out` | — | Focus moved outside, e.g. Tab out of a menu |
-| `escape` | — | Escape, or the arrow key that closes a submenu |
-| `outside` | — | Press outside the reference and the panel |
-| `select` | — | Item activated with `closeOnSelect` |
-| `detached` | — | Reference scrolled out of view, with `hideWhenDetached: 'close'` |
-| `disabled` | — | The container was disabled |
-| `api` | `v-model:open`, slot props, exposed methods, `useSbFloating()` | Same, or the reference unmounting |
+**Slot props**: `isOpen`, `open()`, `close()`, `toggle()`, `placement` (resolved after flip) and `floatingId` (the `id` of the panel, for ARIA attributes of your own). `side`, `align` and `referenceId` are deprecated: read the side and alignment from `placement`, and pass your own `id` to `SbReference`.
 
-```vue
-<SbContainer @close="(reason) => reason === 'select' && track('menu-pick')">
-```
-
-**Slot props**: `isOpen`, `open()`, `close()`, `toggle()`, `placement` (resolved after flip), `side`, `align`, `floatingId` and `referenceId` (the `id` of the panel and of the reference, for ARIA attributes of your own).
-
-**Exposed** (template ref): `isOpen`, `open()`, `close()`, `toggle()`, `update()` (recomputes the position).
+**Exposed** (template ref): `update()` (recomputes the position). `isOpen`, `open()`, `close()` and `toggle()` are deprecated: use `v-model:open`.
 
 ### `<SbReference>`
 

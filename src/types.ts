@@ -37,6 +37,7 @@ export type SbTrigger = 'click' | 'hover' | 'focus' | 'manual';
  * - `hover`: the pointer over the reference (`hover` trigger).
  * - `focus`: focus on the reference (`hover` and `focus` triggers).
  * - `api`: `v-model:open`, the slot props, the exposed methods or `useSbFloating()`.
+ * @deprecated The payload of the `open` event is removed in v6; the event stays.
  */
 export type SbOpenReason = 'trigger' | 'hover' | 'focus' | 'api';
 
@@ -52,6 +53,7 @@ export type SbOpenReason = 'trigger' | 'hover' | 'focus' | 'api';
  * - `disabled`: the container was disabled.
  * - `api`: `v-model:open`, the slot props, the exposed methods, `useSbFloating()`, or the
  *   reference unmounting.
+ * @deprecated The payload of the `close` event is removed in v6; the event stays.
  */
 export type SbCloseReason =
   | 'trigger'
@@ -175,13 +177,22 @@ export interface SbContainerSlotProps {
   toggle: () => void;
   /** Placement resolved by Floating UI, after `flip`. */
   placement: SbPlacement;
-  /** Side of the resolved placement. */
+  /**
+   * Side of the resolved placement.
+   * @deprecated Removed in v6: read it from `placement` (`placement.split('-')[0]`).
+   */
   side: SbSide;
-  /** Alignment of the resolved placement, `undefined` when centered. */
+  /**
+   * Alignment of the resolved placement, `undefined` when centered.
+   * @deprecated Removed in v6: read it from `placement` (`placement.split('-')[1]`).
+   */
   align: SbAlignment | undefined;
   /** `id` of the panel, e.g. for an `aria-describedby` of your own. */
   floatingId: string;
-  /** `id` of the reference, `undefined` until `SbReference` is set up. */
+  /**
+   * `id` of the reference, `undefined` until `SbReference` is set up.
+   * @deprecated Removed in v6: pass your own `id` to `SbReference`.
+   */
   referenceId: string | undefined;
 }
 
@@ -189,13 +200,25 @@ export interface SbContainerSlotProps {
  * Methods exposed by `SbContainer` through a template ref.
  */
 export interface SbContainerExposed {
-  /** Whether the panel is open. */
+  /**
+   * Whether the panel is open.
+   * @deprecated Removed in v6: bind `v-model:open`.
+   */
   readonly isOpen: boolean;
-  /** Opens the panel. */
+  /**
+   * Opens the panel.
+   * @deprecated Removed in v6: set the `v-model:open` value to `true`.
+   */
   open: () => void;
-  /** Closes the panel. */
+  /**
+   * Closes the panel.
+   * @deprecated Removed in v6: set the `v-model:open` value to `false`.
+   */
   close: () => void;
-  /** Toggles the panel. */
+  /**
+   * Toggles the panel.
+   * @deprecated Removed in v6: toggle the `v-model:open` value.
+   */
   toggle: () => void;
   /** Recomputes the panel position. */
   update: () => void;

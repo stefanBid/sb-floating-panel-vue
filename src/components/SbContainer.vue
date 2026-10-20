@@ -57,9 +57,9 @@ const props = withDefaults(defineProps<Omit<SbContainerProps, 'open'>>(), {
 const model = defineModel<boolean | undefined>('open', { default: undefined });
 
 const emit = defineEmits<{
-  /** The panel has opened. */
+  /** The panel has opened. The `reason` payload is deprecated and removed in v6. */
   open: [reason: SbOpenReason];
-  /** The panel has closed. */
+  /** The panel has closed. The `reason` payload is deprecated and removed in v6. */
   close: [reason: SbCloseReason];
 }>();
 

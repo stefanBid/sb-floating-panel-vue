@@ -1,5 +1,13 @@
 # Migrating
 
+## Deprecated in v5 (removed in v6)
+
+Deprecated in 5.3.0. They keep working in 5.x; your editor marks them as deprecated.
+
+- **The reason payload of the `open` and `close` events** (`SbOpenReason`, `SbCloseReason`). The events stay, without arguments.
+- **The exposed `isOpen`, `open()`, `close()` and `toggle()`** of `SbContainer`: bind `v-model:open` instead. `update()` stays.
+- **The slot props `side`, `align` and `referenceId`**: read the side and alignment from `placement` (`placement.split('-')`), and pass your own `id` to `SbReference`.
+
 ## From v4 to v5
 
 v5 is a breaking release.
