@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.1.2](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.1.1...v5.1.2) (2026-10-20)
+
+
+### Bug Fixes
+
+* keep focus off the body when an open panel unmounts ([#34](https://github.com/stefanBid/sb-floating-panel-vue/issues/34)) ([a3faf80](https://github.com/stefanBid/sb-floating-panel-vue/commit/a3faf805a49c6a49f070921a428a317773ac8050))
+
 ## [5.1.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.1.0...v5.1.1) (2026-10-20)
 
 
