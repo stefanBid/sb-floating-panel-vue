@@ -10,13 +10,8 @@
     "strict": true, // Enable all strict type checks
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "esModuleInterop": true,
     "skipLibCheck": true,
-    "allowJs": false,
-    "sourceMap": false,
-    "jsx": "preserve", // Support JSX if needed
-    "types": ["vite/client", "node"], // For Vite-aware projects
-    "resolveJsonModule": true
+    "types": ["node"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

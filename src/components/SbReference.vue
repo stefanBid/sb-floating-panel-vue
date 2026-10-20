@@ -14,8 +14,6 @@ import { warn } from '../utils/warn';
 
 const props = withDefaults(defineProps<SbReferenceProps>(), {
   as: 'button',
-  id: undefined,
-  ariaHaspopup: undefined,
 });
 
 const attrs = useAttrs();

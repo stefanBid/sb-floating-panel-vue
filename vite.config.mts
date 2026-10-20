@@ -8,7 +8,6 @@ export default defineConfig({
     vue(),
     dts({
       outDirs: 'dist',
-      insertTypesEntry: true,
       processor: 'vue',
     }),
   ],
@@ -17,7 +16,6 @@ export default defineConfig({
       entry: resolve(import.meta.dirname, 'src/index.ts'),
       name: 'SbFloatingPanelVue',
       fileName: (format) => `sb-floating-panel.${format}.js`,
-      formats: ['es', 'umd'],
     },
     rolldownOptions: {
       external: ['vue', '@floating-ui/vue'],

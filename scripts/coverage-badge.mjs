@@ -50,9 +50,7 @@ const badge = (label, pct) => {
 mkdirSync(outDir, { recursive: true });
 const files = {
   'coverage.svg': badge('coverage', total.lines.pct),
-  'coverage-statements.svg': badge('statements', total.statements.pct),
   'coverage-branches.svg': badge('branches', total.branches.pct),
-  'coverage-functions.svg': badge('functions', total.functions.pct),
 };
 for (const [name, svg] of Object.entries(files)) writeFileSync(join(outDir, name), svg);
 console.log(`Coverage badges written to ${outDir}: ${Object.keys(files).join(', ')}`);

@@ -8,7 +8,7 @@ const prettierPlugin = require('eslint-plugin-prettier')
 module.exports = [
   // Ignore generated and dependency folders
   {
-    ignores: ['node_modules/**', 'dist/**', 'types/**', 'coverage/**']
+    ignores: ['node_modules/**', 'dist/**', 'coverage/**']
   },
 
   // TypeScript support
@@ -45,12 +45,10 @@ module.exports = [
     },
     plugins: {
       vue: vuePlugin,
-      '@typescript-eslint': tsPlugin,
       prettier: prettierPlugin
     },
     rules: {
       // Vue rules known to work with Flat Config
-      'vue/no-multiple-template-root': 'off',
       'vue/require-prop-types': 'warn',
       'vue/require-default-prop': 'warn',
       'vue/attribute-hyphenation': ['warn', 'always'],
@@ -59,7 +57,6 @@ module.exports = [
         svg: 'always',
         math: 'always',
       }],
-      'vue/multi-word-component-names': 'off',
       'vue/component-name-in-template-casing': ['warn', 'PascalCase'],
       'vue/no-unused-components': 'warn',
       'vue/no-template-shadow': 'warn',

@@ -30,6 +30,7 @@ import {
 } from '../utils/dom';
 import {
   getItems,
+  ITEM_SELECTORS,
   isNavigableRole,
   isTextField,
   submenuKeys,
@@ -42,9 +43,7 @@ defineOptions({ inheritAttrs: false });
 const props = withDefaults(defineProps<SbFloatingProps>(), {
   as: 'div',
   role: 'dialog',
-  transition: undefined,
   teleport: 'body',
-  zIndex: undefined,
   autoFocus: undefined,
   keyboardNavigation: true,
   closeOnSelect: false,
@@ -219,11 +218,6 @@ const SELECTABLE_ITEMS: Record<NavigableRole, string> = {
 const NOT_SELECTABLE =
   ':disabled, [aria-disabled="true"], [aria-haspopup]:not([aria-haspopup="false"])';
 
-const ITEM_ROLES: Record<NavigableRole, string> = {
-  menu: 'role="menuitem", "menuitemcheckbox" or "menuitemradio"',
-  listbox: 'role="option"',
-};
-
 // Checked when the arrow keys move to an item, where a misuse shows (not on open, when the
 // items may still be loading): warned once per panel
 let warnedItems = false;
@@ -231,7 +225,7 @@ const checkItems = (list: HTMLElement[]) => {
   const role = context.navigation.value;
   if (warnedItems || !role) return;
   const problem = !list.length
-    ? `has no items the arrow keys can move to: items need ${ITEM_ROLES[role]} and must not ` +
+    ? `has no items the arrow keys can move to: items need ${ITEM_SELECTORS[role]} and must not ` +
       'be disabled.'
     : !list.every(canFocus)
       ? 'has items that cannot take focus, so the arrow keys cannot move to them: make each ' +
