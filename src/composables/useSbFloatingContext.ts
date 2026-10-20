@@ -22,7 +22,10 @@ export interface SbFloatingContext extends FloatingPanel {
   focusRequest: Ref<'first' | 'last' | null>;
   /** Container of the panel this one is nested in (e.g. the menu of a submenu). */
   parent: SbFloatingContext | null;
-  /** Set when an outside press closes the panel on a focusable element, which keeps focus. */
+  /**
+   * Set before closing when focus must not go back to the reference: an outside press on a
+   * focusable element keeps it, a menu closing with the menus it opened from moves it.
+   */
   skipFocusReturn: boolean;
   /** Mounted `SbReference` and `SbFloating` components, to warn about extra ones. */
   parts: { reference: number; floating: number };
@@ -38,6 +41,9 @@ export interface SbFloatingContext extends FloatingPanel {
   /** Registers a nested container; returns the function that unregisters it. */
   registerChild: (child: SbFloatingContext) => () => void;
 }
+
+/** Whether the container is nested in a menu (a submenu): its reference is an item of it. */
+export const inMenu = (context: SbFloatingContext) => context.parent?.navigation.value === 'menu';
 
 export const sbFloatingContextKey: InjectionKey<SbFloatingContext> = Symbol('SbFloatingContext');
 

@@ -1217,6 +1217,20 @@ describe('tooltip and hover', () => {
     expect(tooltip()).toBeNull();
   });
 
+  it('keeps the default for a delay missing from the object', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    mountTooltip({ delay: { open: 0 } });
+    await pointer(reference(), 'pointerenter');
+    await wait(0);
+    expect(tooltip()).not.toBeNull();
+
+    await pointer(reference(), 'pointerleave');
+    await wait(149);
+    expect(tooltip()).not.toBeNull();
+    await wait(1);
+    expect(tooltip()).toBeNull();
+  });
+
   it('opens on focus at once and closes when focus moves elsewhere', async () => {
     const outside = document.createElement('button');
     document.body.append(outside);
