@@ -4,7 +4,7 @@ import { claimPart, useSbFloatingContext } from '../composables/useSbFloatingCon
 import type { SbReferenceProps } from '../types';
 import { POPUP_ROLES } from '../utils/aria';
 import { getTabbables, toElement } from '../utils/dom';
-import { submenuKeys } from '../utils/navigation';
+import { isTextField, submenuKeys } from '../utils/navigation';
 import { warn } from '../utils/warn';
 
 const props = withDefaults(defineProps<SbReferenceProps>(), {
@@ -18,10 +18,14 @@ const context = useSbFloatingContext('SbReference');
 const { isOpen, disabled, floatingId, floatingRole } = context;
 const release = claimPart(context, 'reference', 'SbReference');
 
-// `button`, `a` with `href` and components (which render their own interactive element)
+const FORM_CONTROLS = ['button', 'input', 'textarea', 'select'];
+
+// Form controls, `a` with `href` and components (which render their own interactive element)
 // are already focusable and keyboard-operable. A function, so it follows `href` in `attrs`.
 const isNative = () =>
-  typeof props.as !== 'string' || props.as === 'button' || (props.as === 'a' && attrs.href != null);
+  typeof props.as !== 'string' ||
+  FORM_CONTROLS.includes(props.as) ||
+  (props.as === 'a' && attrs.href != null);
 
 const fallbackId = `${useId()}-reference`;
 const id = computed(() => props.id ?? fallbackId);
@@ -31,7 +35,17 @@ watchEffect(() => {
   context.referenceId.value = id.value;
 });
 onMounted(() => {
-  if (context.reference.value) return;
+  const el = context.reference.value;
+  if (el) {
+    if (isTextField(el) && context.navigation.value) {
+      warn(
+        `<SbReference> is a text field with a role="${context.navigation.value}" panel: the arrow ` +
+          'keys move focus into the panel, so typing stops there. The combobox pattern (focus ' +
+          'kept in the field with aria-activedescendant) is not supported.'
+      );
+    }
+    return;
+  }
   warn(
     '<SbReference> rendered no element, so the panel cannot be positioned: a component in `as` ' +
       'must render a single root element.'
@@ -58,7 +72,10 @@ const setReference = (el: unknown) => {
 };
 
 const onClick = () => {
-  if (context.trigger.value === 'click') context.toggle();
+  if (context.trigger.value !== 'click') return;
+  // A click in a text field places the caret: it opens the panel, never closes it
+  if (isTextField(context.reference.value)) context.open();
+  else context.toggle();
 };
 
 // A tooltip describes its reference, it does not expand it (w3.org/WAI/ARIA/apg/patterns/tooltip)

@@ -174,10 +174,14 @@ export interface SbReferenceProps {
   /**
    * HTML tag or component to render.
    * - `button` gets `type="button"`.
-   * - `a` with `href` and components are left as they are: a component is expected to render
-   *   its own focusable element (e.g. the `<Button>` of your design system).
+   * - Form controls (`input`, `textarea`, `select`), `a` with `href` and components are left as
+   *   they are: a component is expected to render its own focusable element (e.g. the
+   *   `<Button>` of your design system).
    * - Any other tag (including `a` without `href`) gets `role="button"`, `tabindex="0"` and
    *   Enter/Space handling.
+   *
+   * A text field (`input`, `textarea`) opens the panel on click without closing it, and keeps
+   * focus when the panel opens. The combobox pattern (`aria-activedescendant`) is not supported.
    *
    * When disabled, `button` gets `disabled`; anything else gets `aria-disabled="true"`.
    * @default 'button'
@@ -248,7 +252,8 @@ export interface SbFloatingProps {
    * Moves focus inside the panel once it is positioned: to the first element with
    * `autofocus`, otherwise to the first focusable element, otherwise to the panel itself.
    * With `role="menu"` or `listbox` the first item gets focus (a listbox: its selected option).
-   * @default true, false with `role="tooltip"` and with the `hover` and `focus` triggers
+   * @default true, false with `role="tooltip"`, with the `hover` and `focus` triggers and with
+   * a text field reference
    */
   autoFocus?: boolean;
 

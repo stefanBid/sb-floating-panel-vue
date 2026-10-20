@@ -153,7 +153,7 @@ The trigger the panel is anchored to.
 
 | Prop           | Type                  | Default        | Description                                                                                                  |
 |----------------|-----------------------|----------------|--------------------------------------------------------------------------------------------------------------|
-| `as`           | `string \| Component` | `'button'`     | Tag or component to render. `button` gets `type="button"`; `a` with `href` and components keep their own semantics; any other tag (also `a` without `href`) gets `role="button"`, `tabindex="0"` and Enter/Space |
+| `as`           | `string \| Component` | `'button'`     | Tag or component to render. `button` gets `type="button"`; form controls (`input`, `textarea`, `select`), `a` with `href` and components keep their own semantics; any other tag (also `a` without `href`) gets `role="button"`, `tabindex="0"` and Enter/Space. A text field opens the panel on click without closing it, and keeps focus (see [Text field references](#text-field-references)) |
 | `id`           | `string`              | generated      | `id` of the element, used to name the panel                                                                  |
 | `ariaHaspopup` | `'dialog' \| 'menu' \| 'listbox' \| 'tree' \| 'grid' \| 'true' \| 'false'` | follows `role` | Value of `aria-haspopup`. When unset it follows the `role` of the panel (`alertdialog` gives `dialog`) and is left out for other roles |
 
@@ -172,7 +172,7 @@ The panel, teleported to `body`. It is rendered while open and stays mounted unt
 | `transition`         | `string \| TransitionProps`      | —          | Name of a Vue `<Transition>` defined in your CSS, or an object of `<Transition>` props (e.g. Tailwind classes). No animation when unset |
 | `teleport`           | `string \| HTMLElement \| false` | `'body'`   | Teleport target (selector or element); `false` renders the panel in place |
 | `zIndex`             | `number \| string`               | —          | `z-index` of the positioned wrapper. Use this, not a `z-*` class on the panel (see [Stacking](#stacking)) |
-| `autoFocus`          | `boolean`                        | `true`, `false` with `role="tooltip"` or the `hover` / `focus` trigger | Once positioned, focuses the first `[autofocus]` or focusable element inside, else the panel itself (a menu: its first item; a listbox: its selected option) |
+| `autoFocus`          | `boolean`                        | `true`, `false` with `role="tooltip"`, the `hover` / `focus` trigger or a text field reference | Once positioned, focuses the first `[autofocus]` or focusable element inside, else the panel itself (a menu: its first item; a listbox: its selected option) |
 | `keyboardNavigation` | `boolean`                        | `true`     | Handles the keyboard model of `role="menu"` and `role="listbox"` panels (see [Keyboard](#keyboard)). No effect with other roles |
 
 | Event         | Description                                                    |
@@ -227,6 +227,7 @@ import type {
   - Moving focus outside (e.g. tabbing past the last element) closes it.
   - A container nested inside a panel counts as part of it.
 - **What is up to you.** The library does not implement the keyboard model of `tree` and `grid` panels, nor selection: a listbox option or a menu item does what its `click` handler does (e.g. set `aria-selected` and close the panel). Use valid structure: items directly inside the `menu` / `listbox`, or inside `ul` / `li` with `role="none"`.
+- <a id="text-field-references"></a>**Text field references.** `<SbReference as="input">` (or `textarea`) stays a text field: no `role="button"`, Enter and Space type as usual, a click opens the panel without closing it, and focus stays in the field when the panel opens. The [combobox pattern](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/) (autocomplete with focus kept in the field and `aria-activedescendant`) is not supported: with a `menu` or `listbox` panel the arrow keys move focus into the panel, and the console warns about it in development.
 
 ---
 
@@ -356,7 +357,7 @@ SbContainer ── provides the state ──┬─▶ SbReference
 - The lookup follows the component tree, not the DOM, so it keeps working although `SbFloating` is teleported to `body`.
 - They can sit at any depth inside the container slot, also inside your own components.
 - Used outside an `SbContainer`, they throw: `[sb-floating-panel-vue] <SbFloating> must be used inside <SbContainer>.`
-- In development, the console warns about a second `SbReference` or `SbFloating` in the same container and about an `as` component that renders no single root element. The warnings depend on `process.env.NODE_ENV`, which your bundler replaces: they are left out of production builds.
+- In development, the console warns about a second `SbReference` or `SbFloating` in the same container about an `as` component that renders no single root element and about a text field reference of a `menu` or `listbox` panel. The warnings depend on `process.env.NODE_ENV`, which your bundler replaces: they are left out of production builds.
 
 ### Nested containers
 
