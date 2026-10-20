@@ -793,7 +793,7 @@ describe('keyboard navigation', () => {
   describe('submenu', () => {
     const after = document.createElement('button');
 
-    const mountNested = () => {
+    const mountNested = (subProps: SbContainerProps = {}) => {
       const host = document.createElement('div');
       document.body.append(host, after);
       return mount(SbContainer, {
@@ -803,7 +803,7 @@ describe('keyboard navigation', () => {
             h(SbReference, () => 'File'),
             h(SbFloating, { role: 'menu' }, () => [
               h('button', { role: 'menuitem' }, 'New'),
-              h(SbContainer, { placement: 'right-start' }, () => [
+              h(SbContainer, { placement: 'right-start', ...subProps }, () => [
                 h(SbReference, { role: 'menuitem', class: 'sub' }, () => 'Open recent'),
                 h(SbFloating, { role: 'menu', class: 'submenu' }, () =>
                   buttons(['notes.md', 'todo.md'])
@@ -851,6 +851,20 @@ describe('keyboard navigation', () => {
       expect(submenu()).toBeNull();
       expect(menu()).not.toBeNull();
       expect(document.activeElement).toBe(sub());
+    });
+
+    it('does not open a hover submenu when the arrows move focus onto its trigger', async () => {
+      mountNested({ trigger: 'hover' });
+      trigger().focus();
+      await press('ArrowDown');
+      await settle();
+
+      await press('ArrowDown');
+      expect(document.activeElement).toBe(sub());
+      expect(submenu()).toBeNull();
+      await press('ArrowRight');
+      await settle();
+      expect(document.activeElement).toBe(subItems()[0]);
     });
 
     it('mirrors the arrows in right-to-left text', async () => {
@@ -924,9 +938,10 @@ describe('tooltip and hover', () => {
   const pointer = async (
     el: Element,
     type: 'pointerenter' | 'pointerleave',
-    pointerType = 'mouse'
+    pointerType = 'mouse',
+    relatedTarget: Element | null = null
   ) => {
-    el.dispatchEvent(new PointerEvent(type, { pointerType }));
+    el.dispatchEvent(new PointerEvent(type, { pointerType, relatedTarget }));
     await nextTick();
   };
   const wait = async (ms: number) => {
@@ -1009,6 +1024,77 @@ describe('tooltip and hover', () => {
     await pointer(wrapper, 'pointerleave');
     await wait(150);
     expect(tooltip()).toBeNull();
+  });
+
+  describe('nested panel', () => {
+    // A hover card with a tooltip inside: the tooltip is teleported out of the card
+    const mountCard = () =>
+      mount(SbContainer, {
+        props: { trigger: 'hover' },
+        attachTo: document.body,
+        slots: {
+          default: () => [
+            h(SbReference, { class: 'ref' }, () => 'Profile'),
+            h(SbFloating, { class: 'card' }, () =>
+              h(SbContainer, { trigger: 'hover' }, () => [
+                h(SbReference, { class: 'info' }, () => 'Info'),
+                h(SbFloating, { role: 'tooltip' }, () => 'Details'),
+              ])
+            ),
+          ],
+        },
+      });
+    const card = () => document.querySelector('.card');
+    const info = () => document.querySelector('.info')!;
+
+    // Card and tooltip open, the pointer on the reference of the tooltip
+    const openBoth = async () => {
+      mountCard();
+      await pointer(reference(), 'pointerenter');
+      await wait(300);
+      await pointer(info(), 'pointerenter');
+      await wait(300);
+      expect(tooltip()).not.toBeNull();
+      return { cardWrapper: card()!.parentElement!, tooltipWrapper: tooltip()!.parentElement! };
+    };
+
+    it('keeps the parent open while the pointer is on the nested panel', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const { cardWrapper, tooltipWrapper } = await openBoth();
+
+      await pointer(info(), 'pointerleave', 'mouse', tooltipWrapper);
+      await pointer(cardWrapper, 'pointerleave', 'mouse', tooltipWrapper);
+      await pointer(tooltipWrapper, 'pointerenter', 'mouse', info());
+      await wait(500);
+      expect(card()).not.toBeNull();
+      expect(tooltip()).not.toBeNull();
+
+      // Leaving the nested panel for the page leaves both
+      await pointer(tooltipWrapper, 'pointerleave', 'mouse', document.body);
+      await wait(150);
+      expect(tooltip()).toBeNull();
+      expect(card()).toBeNull();
+    });
+
+    it('keeps the parent open when the pointer crosses a gap onto the nested panel', async () => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      const { cardWrapper, tooltipWrapper } = await openBoth();
+
+      await pointer(info(), 'pointerleave', 'mouse', document.body);
+      await pointer(cardWrapper, 'pointerleave', 'mouse', document.body);
+      await wait(100);
+      await pointer(tooltipWrapper, 'pointerenter', 'mouse', document.body);
+      await wait(500);
+      expect(card()).not.toBeNull();
+      expect(tooltip()).not.toBeNull();
+
+      // Back onto the parent panel: only the nested one closes
+      await pointer(tooltipWrapper, 'pointerleave', 'mouse', cardWrapper);
+      await pointer(cardWrapper, 'pointerenter', 'mouse', tooltipWrapper);
+      await wait(500);
+      expect(tooltip()).toBeNull();
+      expect(card()).not.toBeNull();
+    });
   });
 
   it('takes a single delay for both and ignores touch', async () => {
