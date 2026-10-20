@@ -111,6 +111,14 @@ describe('SbReference', () => {
     expect(trigger().getAttribute('aria-disabled')).toBe('true');
   });
 
+  it('keeps a disabled link from navigating', () => {
+    mountPanel({ disabled: true }, { referenceProps: { as: 'a', href: '#account' } });
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true });
+    trigger().dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+    expect(panel()).toBeNull();
+  });
+
   it('keeps an input a text field that opens on click and keeps focus', async () => {
     mountField();
     expect(trigger().hasAttribute('role')).toBe(false);
@@ -1530,6 +1538,25 @@ describe('misuse and edge cases', () => {
     );
     await nextTick();
     document.querySelector<HTMLElement>('.first .inside')!.focus();
+
+    await keydown(document.activeElement!, 'Escape');
+    expect(document.querySelector('.first')).toBeNull();
+    expect(document.querySelector('.second')).not.toBeNull();
+    first.unmount();
+    second.unmount();
+  });
+
+  it('skips on Escape the open panels with closeOnEscape false', async () => {
+    const first = mountPanel(
+      { defaultOpen: true, closeOnFocusOut: false },
+      { floatingProps: { class: 'first' } }
+    );
+    const second = mountPanel(
+      { defaultOpen: true, closeOnEscape: false },
+      { floatingProps: { class: 'second' } }
+    );
+    await nextTick();
+    document.querySelector<HTMLElement>('.second .inside')!.focus();
 
     await keydown(document.activeElement!, 'Escape');
     expect(document.querySelector('.first')).toBeNull();
