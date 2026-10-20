@@ -15,10 +15,11 @@ import {
   useId,
   watch,
 } from 'vue';
+import { sbFloatingContextKey, type SbFloatingContext } from '../composables/useSbFloatingContext';
 import { useSbFloatingPanel } from '../composables/useSbFloatingPanel';
-import { sbFloatingContextKey, type SbFloatingContext } from '../context';
-import { isFocusable, type NavigableRole } from '../focus';
 import type { SbContainerExposed, SbContainerProps, SbContainerSlotProps } from '../types';
+import { isFocusable } from '../utils/dom';
+import type { NavigableRole } from '../utils/navigation';
 
 defineOptions({ inheritAttrs: false });
 

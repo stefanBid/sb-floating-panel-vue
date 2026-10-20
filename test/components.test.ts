@@ -1120,7 +1120,7 @@ describe('misuse and edge cases', () => {
     const spy = warnings();
     vi.stubEnv('NODE_ENV', 'production');
     vi.resetModules();
-    const { warn } = await import('../src/dev');
+    const { warn } = await import('../src/utils/warn');
     warn('message');
     expect(spy).not.toHaveBeenCalled();
     vi.unstubAllEnvs();

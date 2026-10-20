@@ -1,8 +1,8 @@
 import { inject, type InjectionKey, type Ref } from 'vue';
-import type { FloatingPanel } from './composables/useSbFloatingPanel';
-import { warn } from './dev';
-import type { NavigableRole } from './focus';
-import type { SbTrigger } from './types';
+import type { SbTrigger } from '../types';
+import type { NavigableRole } from '../utils/navigation';
+import { warn } from '../utils/warn';
+import type { FloatingPanel } from './useSbFloatingPanel';
 
 /**
  * State shared by `SbContainer` with `SbReference` and `SbFloating`.
@@ -39,26 +39,7 @@ export interface SbFloatingContext extends FloatingPanel {
   registerChild: (child: SbFloatingContext) => () => void;
 }
 
-/**
- * Panel roles that make the reference a popup trigger, with their `aria-haspopup` value.
- * Panels with these roles are also named after the reference.
- */
-export const POPUP_ROLES: Record<string, 'dialog' | 'menu' | 'listbox' | 'tree' | 'grid'> = {
-  dialog: 'dialog',
-  alertdialog: 'dialog',
-  menu: 'menu',
-  listbox: 'listbox',
-  tree: 'tree',
-  grid: 'grid',
-};
-
 export const sbFloatingContextKey: InjectionKey<SbFloatingContext> = Symbol('SbFloatingContext');
-
-/** Element of a template ref: a component gives its instance, whose root element is `$el`. */
-export function toElement(el: unknown): HTMLElement | null {
-  const node = el && typeof el === 'object' && '$el' in el ? el.$el : el;
-  return node instanceof HTMLElement ? node : null;
-}
 
 /** Counts a mounted part of the container, warning about a second one; returns the release. */
 export function claimPart(

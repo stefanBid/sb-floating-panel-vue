@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, useAttrs, useId, watchEffect } from 'vue';
-import { claimPart, POPUP_ROLES, toElement, useSbFloatingContext } from '../context';
-import { warn } from '../dev';
-import { getTabbables, submenuKeys } from '../focus';
+import { claimPart, useSbFloatingContext } from '../composables/useSbFloatingContext';
 import type { SbReferenceProps } from '../types';
+import { POPUP_ROLES } from '../utils/aria';
+import { getTabbables, toElement } from '../utils/dom';
+import { submenuKeys } from '../utils/navigation';
+import { warn } from '../utils/warn';
 
 const props = withDefaults(defineProps<SbReferenceProps>(), {
   as: 'button',
