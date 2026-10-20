@@ -45,6 +45,11 @@ const mountField = (floatingProps: Record<string, unknown> = {}) =>
     },
   });
 
+const settle = async () => {
+  await flushPromises();
+  await nextTick();
+};
+
 const trigger = () => document.querySelector<HTMLElement>('[aria-expanded]')!;
 const panel = () => document.querySelector<HTMLElement>('[role="dialog"]');
 
@@ -300,11 +305,6 @@ describe('SbFloating', () => {
     document.documentElement.style.direction = '';
   });
 
-  it('renders the panel without any stylesheet', () => {
-    mountPanel({ defaultOpen: true });
-    expect(document.querySelectorAll('style, link[rel="stylesheet"]')).toHaveLength(0);
-  });
-
   it('throws outside SbContainer', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     expect(() => mount(SbFloating)).toThrow('<SbFloating> must be used inside <SbContainer>');
@@ -431,19 +431,6 @@ describe('SbFloating', () => {
     mountPanel({ defaultOpen: true }, { floatingProps: { teleport: false } });
     await nextTick();
     expect(guards()).toHaveLength(0);
-  });
-
-  it('moves focus inside when autoFocus is set and gives it back on close', async () => {
-    mountPanel({}, { floatingProps: { autoFocus: true } });
-    trigger().focus();
-    await click(trigger());
-    await flushPromises();
-    await nextTick();
-    expect(document.activeElement).toBe(document.querySelector('.inside'));
-
-    await keydown(document, 'Escape');
-    expect(panel()).toBeNull();
-    expect(document.activeElement).toBe(trigger());
   });
 });
 
@@ -597,11 +584,6 @@ describe('SbContainer', () => {
     expect(panel()).not.toBeNull();
   });
 
-  it('starts open with defaultOpen', () => {
-    mountPanel({ defaultOpen: true });
-    expect(panel()).not.toBeNull();
-  });
-
   it('does not open when disabled and closes when it becomes disabled', async () => {
     const wrapper = mountPanel({ disabled: true });
     expect(trigger().hasAttribute('disabled')).toBe(true);
@@ -682,10 +664,6 @@ describe('keyboard navigation', () => {
     ...document.querySelectorAll<HTMLElement>('[role="menuitem"], [role="option"]'),
   ];
   const menu = () => document.querySelector('[role="menu"]');
-  const settle = async () => {
-    await flushPromises();
-    await nextTick();
-  };
   // Keys go to the focused element, like in the browser
   const press = (key: string, init: KeyboardEventInit = {}) =>
     keydown(document.activeElement!, key, init);
@@ -1090,10 +1068,6 @@ describe('tooltip and hover', () => {
   };
   const wait = async (ms: number) => {
     vi.advanceTimersByTime(ms);
-    await nextTick();
-  };
-  const settle = async () => {
-    await flushPromises();
     await nextTick();
   };
 

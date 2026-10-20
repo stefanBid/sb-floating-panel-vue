@@ -7,9 +7,8 @@ export default defineConfig({
     environment: 'happy-dom',
     include: ['test/**/*.test.ts'],
     coverage: {
-      provider: 'v8',
       include: ['src/**/*.{ts,vue}'],
-      reporter: ['text', 'json-summary', 'lcov'],
+      reporter: ['text', 'json-summary'],
     },
   },
 });

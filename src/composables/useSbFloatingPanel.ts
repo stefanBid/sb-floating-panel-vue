@@ -9,30 +9,18 @@ import {
   useFloating,
 } from '@floating-ui/vue';
 import type { Middleware } from '@floating-ui/vue';
-import {
-  computed,
-  ref,
-  toValue,
-  type ComputedRef,
-  type CSSProperties,
-  type MaybeRefOrGetter,
-  type Ref,
-} from 'vue';
-import type { SbAlignment, SbPlacement, SbSide, SbStrategy } from '../types';
+import { computed, ref, type ComputedRef, type CSSProperties, type Ref } from 'vue';
+import type { SbAlignment, SbContainerProps, SbPlacement, SbSide } from '../types';
 
-/**
- * Options of the internal `useSbFloatingPanel` composable. Every option can be a value,
- * a ref or a getter, so `SbContainer` props stay reactive.
- */
-export interface FloatingPanelOptions {
-  isOpen: MaybeRefOrGetter<boolean>;
-  placement: MaybeRefOrGetter<SbPlacement>;
-  strategy: MaybeRefOrGetter<SbStrategy>;
-  offset: MaybeRefOrGetter<number>;
-  padding: MaybeRefOrGetter<number>;
-  matchWidth: MaybeRefOrGetter<boolean | 'min'>;
-  hideWhenDetached: MaybeRefOrGetter<boolean | 'close'>;
-}
+/** Positioning props of `SbContainer`, with their defaults: read reactively. */
+type PositioningProps = Readonly<
+  Required<
+    Pick<
+      SbContainerProps,
+      'placement' | 'strategy' | 'offset' | 'padding' | 'matchWidth' | 'hideWhenDetached'
+    >
+  >
+>;
 
 export interface FloatingPanel {
   reference: Ref<HTMLElement | null>;
@@ -67,16 +55,18 @@ const transformOrigin = (placement: string, rtl: boolean) => {
 /**
  * Wraps Floating UI for the components. Not part of the public API.
  */
-export function useSbFloatingPanel(options: FloatingPanelOptions): FloatingPanel {
+export function useSbFloatingPanel(
+  props: PositioningProps,
+  isOpen: Readonly<Ref<boolean>>
+): FloatingPanel {
   const reference = ref<HTMLElement | null>(null);
   const floating = ref<HTMLElement | null>(null);
 
   const middleware = computed<Middleware[]>(() => {
-    const padding = toValue(options.padding);
-    const matchWidth = toValue(options.matchWidth);
+    const { padding, matchWidth } = props;
     // Aligned placements (`bottom-start`) flip before shifting, centered ones shift first
     // (floating-ui.com/docs/flip, "Combining with shift()").
-    const aligned = toValue(options.placement).includes('-');
+    const aligned = props.placement.includes('-');
     const flipMiddleware = flip({
       padding,
       crossAxis: 'alignment',
@@ -85,7 +75,7 @@ export function useSbFloatingPanel(options: FloatingPanelOptions): FloatingPanel
     const shiftMiddleware = shift({ padding, limiter: limitShift() });
 
     const list: Middleware[] = [
-      offset(toValue(options.offset)),
+      offset(props.offset),
       ...(aligned ? [flipMiddleware, shiftMiddleware] : [shiftMiddleware, flipMiddleware]),
       // After flip, with the same padding (floating-ui.com/docs/size).
       size({
@@ -104,7 +94,7 @@ export function useSbFloatingPanel(options: FloatingPanelOptions): FloatingPanel
         },
       }),
     ];
-    if (toValue(options.hideWhenDetached)) list.push(hide({ padding }));
+    if (props.hideWhenDetached) list.push(hide({ padding }));
     return list;
   });
 
@@ -115,9 +105,9 @@ export function useSbFloatingPanel(options: FloatingPanelOptions): FloatingPanel
     isPositioned,
     update,
   } = useFloating(reference, floating, {
-    open: () => toValue(options.isOpen),
-    placement: () => toValue(options.placement),
-    strategy: () => toValue(options.strategy),
+    open: isOpen,
+    placement: () => props.placement,
+    strategy: () => props.strategy,
     middleware,
     whileElementsMounted: autoUpdate,
   });

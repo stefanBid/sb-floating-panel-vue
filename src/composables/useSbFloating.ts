@@ -1,4 +1,4 @@
-import { inject, readonly } from 'vue';
+import { inject } from 'vue';
 import type { UseSbFloatingReturn } from '../types';
 import { sbFloatingContextKey } from './useSbFloatingContext';
 
@@ -14,5 +14,5 @@ export function useSbFloating(): UseSbFloatingReturn {
     );
   }
   const { isOpen, open, close, toggle } = context;
-  return { isOpen: readonly(isOpen), open, close, toggle };
+  return { isOpen, open, close, toggle };
 }

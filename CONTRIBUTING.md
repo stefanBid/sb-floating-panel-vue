@@ -22,4 +22,4 @@ PR titles follow [Conventional Commits](https://www.conventionalcommits.org/) (`
 
 ## Coverage badges
 
-On every push to `main`, CI runs the tests with coverage and `scripts/coverage-badge.mjs` publishes the coverage badges (lines, statements, branches, functions) as SVG files on the `badges` branch, which the badges of the README read. No external service is involved.
+On every push to `main`, CI runs the tests with coverage and `scripts/coverage-badge.mjs` publishes the coverage badges (lines and branches) as SVG files on the `badges` branch, which the badges of the README read. No external service is involved.

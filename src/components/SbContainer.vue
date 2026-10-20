@@ -108,15 +108,7 @@ const hover = (event: PointerEvent) => {
   hoverTimer = setTimeout(() => setOpen(inside, 'hover'), ms);
 };
 
-const panel = useSbFloatingPanel({
-  isOpen,
-  placement: () => props.placement,
-  strategy: () => props.strategy,
-  offset: () => props.offset,
-  padding: () => props.padding,
-  matchWidth: () => props.matchWidth,
-  hideWhenDetached: () => props.hideWhenDetached,
-});
+const panel = useSbFloatingPanel(props, isOpen);
 
 const children = new Set<SbFloatingContext>();
 
