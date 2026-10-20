@@ -65,18 +65,16 @@ import { SbContainer, SbReference, SbFloating } from 'sb-floating-panel-vue';
 
 ### Menu
 
-With `role="menu"` the library handles the keyboard: ArrowDown on the trigger opens the menu on its first item, the arrow keys, Home, End and typing move between items, Tab leaves (see [Keyboard](#keyboard)). Activating an item is up to its `click` handler.
+With `role="menu"` the library handles the keyboard: ArrowDown on the trigger opens the menu on its first item, the arrow keys, Home, End and typing move between items, Tab leaves (see [Keyboard](#keyboard)). Activating an item runs its `click` handler; with `close-on-select` the menu then closes and focus goes back to the trigger.
 
 ```vue
 <SbContainer match-width="min">
-  <template #default="{ close }">
-    <SbReference class="my-trigger">Account</SbReference>
-    <SbFloating role="menu" class="my-panel">
-      <button v-for="item in ['Profile', 'Settings', 'Sign out']" :key="item" type="button" role="menuitem" @click="close()">
-        {{ item }}
-      </button>
-    </SbFloating>
-  </template>
+  <SbReference class="my-trigger">Account</SbReference>
+  <SbFloating role="menu" close-on-select class="my-panel">
+    <button v-for="item in ['Profile', 'Settings', 'Sign out']" :key="item" type="button" role="menuitem" @click="go(item)">
+      {{ item }}
+    </button>
+  </SbFloating>
 </SbContainer>
 ```
 
@@ -174,6 +172,7 @@ The panel, teleported to `body`. It is rendered while open and stays mounted unt
 | `zIndex`             | `number \| string`               | —          | `z-index` of the positioned wrapper. Use this, not a `z-*` class on the panel (see [Stacking](#stacking)) |
 | `autoFocus`          | `boolean`                        | `true`, `false` with `role="tooltip"`, the `hover` / `focus` trigger or a text field reference | Once positioned, focuses the first `[autofocus]` or focusable element inside, else the panel itself (a menu: its first item; a listbox: its selected option) |
 | `keyboardNavigation` | `boolean`                        | `true`     | Handles the keyboard model of `role="menu"` and `role="listbox"` panels (see [Keyboard](#keyboard)). No effect with other roles |
+| `closeOnSelect`      | `boolean`                        | `false`    | With `role="menu"` / `"listbox"`, activating a `menuitem` / `option` closes the panel (a submenu: with its parent menus) and gives focus back to the reference, after the item's `click` handler. Not for `menuitemcheckbox` / `menuitemradio`, submenu triggers, disabled items or a listbox with `aria-multiselectable="true"`; `event.preventDefault()` in the handler keeps it open |
 
 | Event         | Description                                                    |
 |---------------|----------------------------------------------------------------|
@@ -181,6 +180,25 @@ The panel, teleported to `body`. It is rendered while open and stays mounted unt
 | `after-leave` | The leave transition has finished and the panel is removed     |
 
 With a popup role (`dialog`, `alertdialog`, `menu`, `listbox`, `tree`, `grid`), the panel is named after the reference with `aria-labelledby`, unless you pass `aria-label` or `aria-labelledby` yourself. When focus is inside the panel as it closes, it goes back to the reference.
+
+### `useSbFloating()`
+
+The open state and actions of the closest `SbContainer`, for your own components inside it: a `MenuItem` of your design system can close the menu without `close` passed down from the slot.
+
+```ts
+import { useSbFloating } from 'sb-floating-panel-vue';
+
+const { isOpen, open, close, toggle } = useSbFloating();
+```
+
+| Returns  | Type                     | Description               |
+|----------|--------------------------|---------------------------|
+| `isOpen` | `Readonly<Ref<boolean>>` | Whether the panel is open |
+| `open`   | `() => void`             | Opens the panel           |
+| `close`  | `() => void`             | Closes the panel          |
+| `toggle` | `() => void`             | Toggles the panel         |
+
+Call it in `setup` of a component rendered inside an `SbContainer` (in the reference, the panel or anywhere in its slot); outside one it throws.
 
 ### Types
 
@@ -197,6 +215,7 @@ import type {
   SbAlignment,
   SbStrategy,
   SbFloatingRole,
+  UseSbFloatingReturn,
 } from 'sb-floating-panel-vue';
 ```
 
@@ -226,7 +245,7 @@ import type {
   - A press outside closes the panel; on touch, only a tap does, so starting a scroll keeps it open.
   - Moving focus outside (e.g. tabbing past the last element) closes it.
   - A container nested inside a panel counts as part of it.
-- **What is up to you.** The library does not implement the keyboard model of `tree` and `grid` panels, nor selection: a listbox option or a menu item does what its `click` handler does (e.g. set `aria-selected` and close the panel). Use valid structure: items directly inside the `menu` / `listbox`, or inside `ul` / `li` with `role="none"`.
+- **What is up to you.** The library does not implement the keyboard model of `tree` and `grid` panels, nor selection: a listbox option or a menu item does what its `click` handler does (e.g. set `aria-selected`); add `closeOnSelect` to close the panel after it. Use valid structure: items directly inside the `menu` / `listbox`, or inside `ul` / `li` with `role="none"`.
 - <a id="text-field-references"></a>**Text field references.** `<SbReference as="input">` (or `textarea`) stays a text field: no `role="button"`, Enter and Space type as usual, a click opens the panel without closing it, and focus stays in the field when the panel opens. The [combobox pattern](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/) (autocomplete with focus kept in the field and `aria-activedescendant`) is not supported: with a `menu` or `listbox` panel the arrow keys move focus into the panel, and the console warns about it in development.
 
 ---
@@ -355,9 +374,9 @@ SbContainer ── provides the state ──┬─▶ SbReference
 
 - `SbReference` and `SbFloating` find their container on their own: you pass no refs, styles or handlers, and never write `.value`.
 - The lookup follows the component tree, not the DOM, so it keeps working although `SbFloating` is teleported to `body`.
-- They can sit at any depth inside the container slot, also inside your own components.
+- They can sit at any depth inside the container slot, also inside your own components, which can read the same state with [`useSbFloating()`](#usesbfloating).
 - Used outside an `SbContainer`, they throw: `[sb-floating-panel-vue] <SbFloating> must be used inside <SbContainer>.`
-- In development, the console warns about a second `SbReference` or `SbFloating` in the same container about an `as` component that renders no single root element, about a text field reference of a `menu` or `listbox` panel, about a `tooltip` opened by click, and, the first time the arrow keys look for them, about a `menu` or `listbox` with no items or with items that cannot take focus. The warnings depend on `process.env.NODE_ENV`, which your bundler replaces: they are left out of production builds.
+- In development, the console warns about a second `SbReference` or `SbFloating` in the same container, about an `as` component that renders no single root element, about a text field reference of a `menu` or `listbox` panel, about a `tooltip` opened by click, and, the first time the arrow keys look for them, about a `menu` or `listbox` with no items or with items that cannot take focus. The warnings depend on `process.env.NODE_ENV`, which your bundler replaces: they are left out of production builds.
 
 ### Nested containers
 

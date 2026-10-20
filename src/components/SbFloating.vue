@@ -12,7 +12,11 @@ import {
   type CSSProperties,
   type TransitionProps,
 } from 'vue';
-import { claimPart, useSbFloatingContext } from '../composables/useSbFloatingContext';
+import {
+  claimPart,
+  useSbFloatingContext,
+  type SbFloatingContext,
+} from '../composables/useSbFloatingContext';
 import type { SbFloatingProps } from '../types';
 import { POPUP_ROLES } from '../utils/aria';
 import {
@@ -41,6 +45,7 @@ const props = withDefaults(defineProps<SbFloatingProps>(), {
   zIndex: undefined,
   autoFocus: undefined,
   keyboardNavigation: true,
+  closeOnSelect: false,
 });
 
 const emit = defineEmits<{
@@ -176,6 +181,15 @@ const items = () => {
   return panel.value && role ? getItems(panel.value, role) : [];
 };
 
+// Items whose activation is a choice: not checkbox and radio items, which toggle a state, nor
+// the trigger of a submenu
+const SELECTABLE_ITEMS: Record<NavigableRole, string> = {
+  menu: '[role="menuitem"]',
+  listbox: '[role="option"]',
+};
+const NOT_SELECTABLE =
+  ':disabled, [aria-disabled="true"], [aria-haspopup]:not([aria-haspopup="false"])';
+
 const ITEM_ROLES: Record<NavigableRole, string> = {
   menu: 'role="menuitem", "menuitemcheckbox" or "menuitemradio"',
   listbox: 'role="option"',
@@ -241,23 +255,49 @@ const findByText = (list: HTMLElement[], index: number, key: string) => {
   return order.find((item) => item.textContent?.trim().toLowerCase().startsWith(query));
 };
 
-// Tab leaves a menu, as from its trigger: the menu and the menus it opened from close
-const leaveMenu = (backwards: boolean) => {
-  let root = context;
-  const chain = [root];
-  while (root.parent?.navigation.value === 'menu') {
-    root = root.parent;
-    chain.push(root);
+// A menu and the menus it opened from, outermost last
+const menuChain = () => {
+  const chain = [context];
+  while (chain[chain.length - 1]!.parent?.navigation.value === 'menu') {
+    chain.push(chain[chain.length - 1]!.parent!);
   }
-  const reference = root.reference.value;
-  const target = backwards
-    ? reference
-    : ((reference && getNextTabbable(reference, (el) => root.contains(el))) ?? reference);
+  return chain;
+};
+
+// Closes the containers at once and moves focus to `target`, instead of each one giving it
+// back to its own reference
+const closeChain = (chain: SbFloatingContext[], target: HTMLElement | null | undefined) => {
   for (const container of chain) {
     container.skipFocusReturn = true;
     container.close();
   }
-  target?.focus();
+  target?.focus({ preventScroll: true });
+};
+
+// Tab leaves a menu, as from its trigger: the menu and the menus it opened from close
+const leaveMenu = (backwards: boolean) => {
+  const chain = menuChain();
+  const root = chain[chain.length - 1]!;
+  const reference = root.reference.value;
+  const target = backwards
+    ? reference
+    : ((reference && getNextTabbable(reference, (el) => root.contains(el))) ?? reference);
+  closeChain(chain, target);
+};
+
+// closeOnSelect: activating a menu item or a listbox option closes the panel (a menu: with the
+// menus it opened from) and gives focus back to the trigger. Runs after the click handler of
+// the item, which can keep the panel open with `event.preventDefault()`.
+const onClick = (event: MouseEvent) => {
+  const { role } = props;
+  const el = panel.value;
+  if (!props.closeOnSelect || event.defaultPrevented || !el) return;
+  if (!isNavigableRole(role)) return;
+  const item = (event.target as Element).closest(SELECTABLE_ITEMS[role]);
+  if (!item || item.closest(`[role="${role}"]`) !== el || item.matches(NOT_SELECTABLE)) return;
+  if (role === 'listbox' && el.getAttribute('aria-multiselectable') === 'true') return;
+  const chain = role === 'menu' ? menuChain() : [context];
+  closeChain(chain, chain[chain.length - 1]!.reference.value);
 };
 
 const onKeydown = (event: KeyboardEvent) => {
@@ -378,6 +418,7 @@ watch(context.focusRequest, (edge) => {
           :data-sbf-side="side"
           :data-sbf-align="align"
           @keydown="onKeydown"
+          @click="onClick"
         >
           <slot></slot>
         </component>
