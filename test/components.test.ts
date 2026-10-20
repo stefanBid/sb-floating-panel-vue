@@ -33,6 +33,18 @@ function mountPanel(
   });
 }
 
+// A text field reference, which has no content
+const mountField = (floatingProps: Record<string, unknown> = {}) =>
+  mount(SbContainer, {
+    attachTo: document.body,
+    slots: {
+      default: () => [
+        h(SbReference, { as: 'input', 'aria-label': 'Search' }),
+        h(SbFloating, floatingProps, () => h('button', { role: 'option' }, 'Result')),
+      ],
+    },
+  });
+
 const trigger = () => document.querySelector<HTMLElement>('[aria-expanded]')!;
 const panel = () => document.querySelector<HTMLElement>('[role="dialog"]');
 
@@ -97,6 +109,23 @@ describe('SbReference', () => {
     expect(trigger().hasAttribute('role')).toBe(false);
     expect(trigger().hasAttribute('tabindex')).toBe(false);
     expect(trigger().getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('keeps an input a text field that opens on click and keeps focus', async () => {
+    mountField();
+    expect(trigger().hasAttribute('role')).toBe(false);
+    expect(trigger().hasAttribute('tabindex')).toBe(false);
+    expect((await keydown(trigger(), ' ')).defaultPrevented).toBe(false);
+    expect((await keydown(trigger(), 'Enter')).defaultPrevented).toBe(false);
+    expect(panel()).toBeNull();
+
+    trigger().focus();
+    await openAndSettle();
+    expect(panel()).not.toBeNull();
+    expect(document.activeElement).toBe(trigger());
+    // A second click places the caret, it does not close the panel
+    await click(trigger());
+    expect(panel()).not.toBeNull();
   });
 
   it('renders a component as the reference', async () => {
@@ -1200,6 +1229,14 @@ describe('misuse and edge cases', () => {
     const ours = spy.mock.calls.filter(([message]) => String(message).startsWith('[sb-floating'));
     expect(ours).toHaveLength(1);
     expect(ours[0]![0]).toContain('single root element');
+  });
+
+  it('warns about a text field reference of a menu or listbox panel', () => {
+    const spy = warnings();
+    mountField({ role: 'listbox' }).unmount();
+    mountField();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0]![0]).toContain('combobox');
   });
 
   it('does not warn in production', async () => {

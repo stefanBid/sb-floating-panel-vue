@@ -77,13 +77,15 @@ const panelAttrs = () => ({
   ...attrs,
 });
 
-// Focus stays on the reference of a tooltip, and of a panel opened by hovering or focusing it
+// Focus stays on the reference of a tooltip, of a panel opened by hovering or focusing it,
+// and of a text field, where the user keeps typing
 const autoFocus = computed(
   () =>
     props.autoFocus ??
     (props.role !== 'tooltip' &&
       context.trigger.value !== 'hover' &&
-      context.trigger.value !== 'focus')
+      context.trigger.value !== 'focus' &&
+      !isTextField(context.reference.value))
 );
 
 // Guards are needed only when the panel is teleported away from the reference,
