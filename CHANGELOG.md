@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.3.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.3.0...v5.3.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* explain in the README that @floating-ui/vue installs as a peer automatically ([#47](https://github.com/stefanBid/sb-floating-panel-vue/issues/47)) ([421d7d1](https://github.com/stefanBid/sb-floating-panel-vue/commit/421d7d1a0e885f00fe7555bdd26f5eb340a0df24))
+
 ## [5.3.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.2.1...v5.3.0) (2026-10-21)
 
 
