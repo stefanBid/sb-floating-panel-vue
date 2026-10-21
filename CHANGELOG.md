@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.3.0](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.2.1...v5.3.0) (2026-10-21)
+
+
+### Features
+
+* deprecate the event reason, the exposed open state methods and three slot props ([#45](https://github.com/stefanBid/sb-floating-panel-vue/issues/45)) ([b27eb4f](https://github.com/stefanBid/sb-floating-panel-vue/commit/b27eb4f583f71a01c58eea8fb1c73fb260bce6aa))
+
 ## [5.2.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.2.0...v5.2.1) (2026-10-20)
 
 
