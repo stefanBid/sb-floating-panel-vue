@@ -105,8 +105,8 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
         :offset="6"
         match-width="min"
         :disabled="menuDisabled"
-        @open="(reason) => log(`Dropdown menu: open (${reason})`)"
-        @close="(reason) => log(`Dropdown menu: close (${reason})`)"
+        @open="log('Dropdown menu: open')"
+        @close="log('Dropdown menu: close')"
       >
         <SbReference class="trigger trigger--wide">
           Account menu <ChevronIcon class="chevron" />
@@ -139,8 +139,8 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
         placement="bottom-start"
         :offset="4"
         match-width
-        @open="(reason) => log(`Select: open (${reason})`)"
-        @close="(reason) => log(`Select: close (${reason})`)"
+        @open="log('Select: open')"
+        @close="log('Select: close')"
       >
         <SbReference
           id="fruit"
@@ -226,8 +226,8 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
       <SbContainer
         placement="bottom-start"
         trigger="hover"
-        @open="(reason) => log(`Hover card: open (${reason})`)"
-        @close="(reason) => log(`Hover card: close (${reason})`)"
+        @open="log('Hover card: open')"
+        @close="log('Hover card: close')"
       >
         <SbReference as="a" href="#" class="user-link" @click.prevent>@ada</SbReference>
         <SbFloating transition="pop" class="panel panel--padded hovercard" aria-label="Ada">
@@ -442,8 +442,8 @@ const explorerTransition = ref<'pop' | 'slide' | 'none'>('slide');
     <aside class="log" aria-label="Event log">
       <h2>Events</h2>
       <p v-if="!events.length" class="log__empty">
-        Open a panel: the <code>open</code> and <code>close</code> events, with their reason, and
-        the <code>after-enter</code> and <code>after-leave</code> events show up here.
+        Open a panel: the <code>open</code> and <code>close</code> events and the
+        <code>after-enter</code> and <code>after-leave</code> events show up here.
       </p>
       <ol v-else>
         <li v-for="event in events" :key="event.id">{{ event.text }}</li>

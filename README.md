@@ -123,34 +123,17 @@ Holds the state and the positioning. Renders no element of its own, only its slo
 | `closeOnClickOutside` | `boolean` | `true` | Closes on a pointer press outside the reference and the panel (on touch, on the tap's click) |
 | `closeOnFocusOut` | `boolean` | `true` | Closes when keyboard focus moves outside the reference and the panel |
 
-| Event         | Payload         | Description                   |
-| ------------- | --------------- | ----------------------------- |
-| `update:open` | `boolean`       | Used by `v-model:open`        |
-| `open`        | `SbOpenReason`  | The panel has opened, and why |
-| `close`       | `SbCloseReason` | The panel has closed, and why |
+| Event         | Payload                      | Description            |
+| ------------- | ---------------------------- | ---------------------- |
+| `update:open` | `boolean`                    | Used by `v-model:open` |
+| `open`        | `SbOpenReason` (deprecated)  | The panel has opened   |
+| `close`       | `SbCloseReason` (deprecated) | The panel has closed   |
 
-The reason tells what opened or closed the panel, e.g. for analytics or to react only to a dismissal:
+The reason passed to `open` and `close` (what opened or closed the panel) is deprecated and removed in v6; the events stay. Its values are described on the `SbOpenReason` and `SbCloseReason` types.
 
-| Reason | `open` | `close` |
-| --- | --- | --- |
-| `trigger` | Click on the reference, Enter, Space or an arrow key on it | Click on the reference, Enter or Space on it |
-| `hover` | Pointer over the reference (`hover` trigger) | Pointer left the reference and the panel (`hover` trigger) |
-| `focus` | Focus on the reference (`hover` and `focus` triggers) | — |
-| `focus-out` | — | Focus moved outside, e.g. Tab out of a menu |
-| `escape` | — | Escape, or the arrow key that closes a submenu |
-| `outside` | — | Press outside the reference and the panel |
-| `select` | — | Item activated with `closeOnSelect` |
-| `detached` | — | Reference scrolled out of view, with `hideWhenDetached: 'close'` |
-| `disabled` | — | The container was disabled |
-| `api` | `v-model:open`, slot props, exposed methods, `useSbFloating()` | Same, or the reference unmounting |
+**Slot props**: `isOpen`, `open()`, `close()`, `toggle()`, `placement` (resolved after flip) and `floatingId` (the `id` of the panel, for ARIA attributes of your own). `side`, `align` and `referenceId` are deprecated: read the side and alignment from `placement`, and pass your own `id` to `SbReference`.
 
-```vue
-<SbContainer @close="(reason) => reason === 'select' && track('menu-pick')">
-```
-
-**Slot props**: `isOpen`, `open()`, `close()`, `toggle()`, `placement` (resolved after flip), `side`, `align`, `floatingId` and `referenceId` (the `id` of the panel and of the reference, for ARIA attributes of your own).
-
-**Exposed** (template ref): `isOpen`, `open()`, `close()`, `toggle()`, `update()` (recomputes the position).
+**Exposed** (template ref): `update()` (recomputes the position). `isOpen`, `open()`, `close()` and `toggle()` are deprecated: use `v-model:open`.
 
 ### `<SbReference>`
 
@@ -234,10 +217,10 @@ Every prop, slot prop, event and option type is exported (`SbContainerProps`, `S
 
 - <a id="tooltip-1"></a>**Tooltip.** With `role="tooltip"` the panel follows the WAI-ARIA [tooltip](https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/) pattern: the reference gets no `aria-expanded` nor `aria-controls`, and while open `aria-describedby` points to the panel (pass your own `aria-describedby` on `SbReference` to replace it). Focus stays on the reference and no focus guards are rendered. Use it with `trigger="hover"`, which meets WCAG [1.4.13](https://www.w3.org/WAI/WCAG22/Understanding/content-on-hover-or-focus): it opens on keyboard focus too, the pointer can move onto the tooltip within `delay.close`, and Escape dismisses it.
 - **Dismissal.**
-  - Escape closes the open panel that has focus, else the most recently opened one. It is ignored when a widget inside has already handled it (`event.preventDefault()`) and while an IME composition is in progress.
+  - Escape closes the open panel that has focus, else the most recently opened one, skipping panels with `closeOnEscape` set to `false`. It is ignored when a widget inside has already handled it (`event.preventDefault()`) and while an IME composition is in progress.
   - A press outside closes the panel; on touch, only a tap does, so starting a scroll keeps it open.
   - Moving focus outside (e.g. tabbing past the last element) closes it.
-  - A container nested inside a panel counts as part of it.
+  - A container nested inside a panel counts as part of it. Anything else outside the reference and the panel does not: a datepicker, select or other popup of another library, teleported out of the panel, closes it when pressed or focused. Set `:close-on-click-outside="false"` and `:close-on-focus-out="false"` on that container and close it yourself.
 - **What is up to you.** The library does not implement the keyboard model of `tree` and `grid` panels, nor selection: a listbox option or a menu item does what its `click` handler does (e.g. set `aria-selected`); add `closeOnSelect` to close the panel after it. Use valid structure: items directly inside the `menu` / `listbox`, or inside `ul` / `li` with `role="none"`.
 - <a id="text-field-references"></a>**Text field references.** `<SbReference as="input">` (or `textarea`) stays a text field: no `role="button"`, Enter and Space type as usual, a click opens the panel without closing it, and focus stays in the field when the panel opens. The [combobox pattern](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/) (autocomplete with focus kept in the field and `aria-activedescendant`) is not supported: with a `menu` or `listbox` panel the arrow keys move focus into the panel, and the console warns about it in development.
 
