@@ -1,22 +1,19 @@
-name: Release Please
+name: release-please
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 permissions:
   contents: write
-  issues: write
   pull-requests: write
 
+# Not skipped for bot pushes: it has to react to the merge of its own release PR to tag and publish the release.
 jobs:
   release-please:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Open or update the release PR
-        uses: googleapis/release-please-action@v5
+      - uses: googleapis/release-please-action@v5
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

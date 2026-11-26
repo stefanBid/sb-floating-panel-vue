@@ -1,0 +1,55 @@
+name: Coverage Badge
+
+# Not a check: on every push to main it measures the coverage and publishes the badges (SVG) on the `badges`
+# branch, which the README badges read. That branch holds nothing else and is not protected by the main
+# ruleset. Kept out of build-check.yml, which only reads the repo.
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coverage-badge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # No dependency cache in a workflow that can write to the repo: a poisoned cache entry would run with
+      # contents: write (setup-node's own recommendation). The install is small.
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Measure coverage
+        run: npm run test:coverage
+
+      - name: Build the badges
+        run: node scripts/coverage-badge.mjs badges
+
+      # Orphan branch with a single commit: only the latest badges are kept.
+      - name: Publish on the badges branch
+        working-directory: badges
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          git init -q -b badges
+          git add .
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "chore: update coverage badges for ${SHA::7}"
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" badges
