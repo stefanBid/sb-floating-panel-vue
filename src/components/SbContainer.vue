@@ -279,5 +279,5 @@ defineExpose<SbContainerExposed>({
     :align="panel.align.value"
     :floating-id="context.floatingId"
     :reference-id="context.referenceId.value"
-  ></slot>
+  />
 </template>

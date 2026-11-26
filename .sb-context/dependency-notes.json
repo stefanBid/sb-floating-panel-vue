@@ -25,11 +25,15 @@
         "https://github.com/typescript-eslint/typescript-eslint/issues/10940"
       ],
       "firstSeen": "2026-10-18",
-      "lastChecked": "2026-10-18",
+      "lastChecked": "2026-11-26",
       "history": [
         {
           "date": "2026-10-18",
           "text": "Constraint set to ^6.0.3 by the maintainer. typescript-eslint 8.71.2 still accepts only <6.1.0: when TS 6.1 ships, ^6.0.3 will pick it up and npm may report a peer conflict until typescript-eslint widens its range."
+        },
+        {
+          "date": "2026-11-26",
+          "text": "2026-11-26: @typescript-eslint/parser 8.74.0 still declares typescript >=4.8.4 <6.1.0; issue #10940 still open."
         }
       ]
     },
@@ -59,6 +63,29 @@
       ],
       "resolvedAt": "2026-10-18",
       "resolution": "Moved to peerDependencies ^2.0.1 (+ devDependencies) in the 2.0.0 breaking release; lib-check L6 cleared."
+    },
+    {
+      "id": "minimatch@11.0.1",
+      "package": "minimatch",
+      "current": "10.2.6",
+      "target": "11.0.1",
+      "status": "watching",
+      "summary": "dev-only advisories (GHSA-g3hv-75wg-m249 minimatch, GHSA-3g3m-2fjr-6pw4 glob, moderate) reach the project through @vue/test-utils 2.6.0 -> js-beautify 2.0.3 (latest) -> editorconfig/glob -> minimatch 10.x; npm only offers a downgrade of @vue/test-utils to 2.4.11, not applied. Not shipped in the library.",
+      "blockedBy": [
+        {
+          "package": "js-beautify",
+          "range": "2.0.3",
+          "owner": "upstream"
+        }
+      ],
+      "recheck": "has js-beautify released a version after 2.0.3 whose editorconfig/glob use minimatch >=11.0.1? (npm view js-beautify version dependencies; npm audit)",
+      "links": [
+        "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+        "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4"
+      ],
+      "firstSeen": "2026-11-26",
+      "lastChecked": "2026-11-26",
+      "history": []
     }
   ]
 }
