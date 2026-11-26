@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [5.3.2](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.3.1...v5.3.2) (2026-11-26)
+
+
+### Bug Fixes
+
+* **deps:** ship the build made with the updated dependencies (vue ([75faf33](https://github.com/stefanBid/sb-floating-panel-vue/commit/75faf33ca7b572c0e62d85ed0908c430a26bd7c8))
+
 ## [5.3.1](https://github.com/stefanBid/sb-floating-panel-vue/compare/v5.3.0...v5.3.1) (2026-10-21)
 
 
