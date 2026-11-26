@@ -20,6 +20,10 @@ happy-dom has no layout: every rect is empty, and `direction` is computed from C
 
 PR titles follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `feat!:` for a breaking change): release-please reads them to bump the version and write the changelog.
 
+## Releases
+
+Merging the release PR opened by release-please creates the tag and the GitHub Release; the `publish` job of `release-please.yml` then publishes the package to npm with [Trusted Publishing](https://docs.npmjs.com/trusted-publishers) (OIDC, no npm token in the repo, provenance attached). `prepublishOnly` builds `dist/` right before packing. Nothing is published by hand.
+
 ## Coverage badges
 
 On every push to `main`, CI runs the tests with coverage and `scripts/coverage-badge.mjs` publishes the coverage badges (lines and branches) as SVG files on the `badges` branch, which the badges of the README read. No external service is involved.

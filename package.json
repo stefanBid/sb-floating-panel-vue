@@ -52,7 +52,8 @@
     "lint": "eslint .",
     "check": "vue-tsc --noEmit && vue-tsc --noEmit -p tsconfig.playground.json",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "npm run build"
   },
   "peerDependencies": {
     "@floating-ui/vue": "^2.0.1",
