@@ -22,5 +22,11 @@ pnpm-debug.log*
 # Test coverage
 coverage/
 
-# Impeccable design critiques (local)
-.impeccable/
+# Impeccable: the design context is versioned (DESIGN.md, .impeccable/design.json, design-full.md,
+# config.json, live/config.json, critique/ignore.md); what is per developer or per session stays local
+.impeccable/config.local.json
+.impeccable/hook.cache.json
+.impeccable/live/*
+!.impeccable/live/config.json
+.impeccable/critique/*
+!.impeccable/critique/ignore.md
