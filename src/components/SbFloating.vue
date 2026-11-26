@@ -447,7 +447,7 @@ watch(context.focusRequest, (edge) => {
           @keydown="onKeydown"
           @click="onClick"
         >
-          <slot></slot>
+          <slot />
         </component>
       </Transition>
       <span v-if="hasFocusGuards" v-bind="guardAttrs" @focus="onEndGuardFocus"></span>

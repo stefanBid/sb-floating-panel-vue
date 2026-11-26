@@ -170,6 +170,6 @@ const onKeydown = (event: KeyboardEvent) => {
     @pointerenter="context.hover"
     @pointerleave="context.hover"
   >
-    <slot></slot>
+    <slot />
   </component>
 </template>
