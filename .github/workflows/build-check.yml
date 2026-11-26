@@ -1,0 +1,86 @@
+name: Build Check
+
+# `build` (and `docker-image`) are required status checks of the main ruleset. A required check must always
+# report, so the workflow runs on every PR and push to main (no paths-ignore at this level, which would leave
+# the checks "Expected — waiting" forever on a docs-only PR): the `changes` job decides, and the other jobs are
+# skipped when nothing that affects the build changed. A skipped job counts as passed.
+on:
+  pull_request:
+    branches: [ "main" ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# If a new commit arrives while a previous run (on the same branch/PR)
+# is still in progress, cancel the older run: only the latest code matters.
+concurrency:
+  group: build-check-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Whether the change touches anything besides docs and the Claude / sb-context / Impeccable files.
+  # Also skips drafts, to save CI minutes, and PRs opened by automation (release-please, dependabot, ...).
+  # These conditions only apply to pull_request events; for push events github.event.pull_request is null,
+  # so both checks evaluate to true. The jobs that need this one are skipped with it.
+  changes:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.pull_request.draft != true &&
+      github.actor != 'github-actions[bot]' &&
+      github.actor != 'dependabot[bot]'
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      # `every`: a file counts only if it matches all the patterns, i.e. it is not one of the excluded ones.
+      - name: Detect build-relevant changes
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          predicate-quantifier: 'every'
+          filters: |
+            code:
+              - '**'
+              - '!**/*.md'
+              - '!LICENSE'
+              - '!.claude/**'
+              - '!.sb-context/**'
+              - '!.impeccable/**'
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run check
+
+      - name: Test
+        run: npm run test
+
+      # Last: the library build is what produces dist/.
+      - name: Build
+        run: npm run build
