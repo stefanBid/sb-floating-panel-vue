@@ -25,7 +25,7 @@
         "https://github.com/typescript-eslint/typescript-eslint/issues/10940"
       ],
       "firstSeen": "2026-10-18",
-      "lastChecked": "2026-11-26",
+      "lastChecked": "2026-11-27",
       "history": [
         {
           "date": "2026-10-18",
@@ -34,6 +34,10 @@
         {
           "date": "2026-11-26",
           "text": "2026-11-26: @typescript-eslint/parser 8.74.0 still declares typescript >=4.8.4 <6.1.0; issue #10940 still open."
+        },
+        {
+          "date": "2026-11-27",
+          "text": "2026-11-27: @typescript-eslint/parser and eslint-plugin 8.74.0 (latest) still declare typescript >=4.8.4 <6.1.0; issue #10940 still open."
         }
       ]
     },
@@ -84,8 +88,13 @@
         "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4"
       ],
       "firstSeen": "2026-11-26",
-      "lastChecked": "2026-11-26",
-      "history": []
+      "lastChecked": "2026-11-27",
+      "history": [
+        {
+          "date": "2026-11-27",
+          "text": "2026-11-27: js-beautify still 2.0.3 (latest, deps editorconfig ^3.0.2, glob ^13.0.6); npm audit still reports the moderate dev-only chain."
+        }
+      ]
     }
   ]
 }

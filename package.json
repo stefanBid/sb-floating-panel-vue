@@ -26,7 +26,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stefanBid/sb-floating-panel-vue"
+    "url": "git+https://github.com/stefanBid/sb-floating-panel-vue.git"
   },
   "bugs": {
     "url": "https://github.com/stefanBid/sb-floating-panel-vue/issues"
@@ -55,12 +55,13 @@
     "test:coverage": "vitest run --coverage",
     "prepublishOnly": "npm run build"
   },
+  "dependencies": {
+    "@floating-ui/vue": "^2.0.1"
+  },
   "peerDependencies": {
-    "@floating-ui/vue": "^2.0.1",
     "vue": "^3.5.13"
   },
   "devDependencies": {
-    "@floating-ui/vue": "^2.0.1",
     "@types/node": "^26.6.11",
     "@typescript-eslint/eslint-plugin": "^8.74.0",
     "@typescript-eslint/parser": "^8.74.0",
@@ -68,7 +69,7 @@
     "@vitest/coverage-v8": "^5.1.2",
     "@vue/language-core": "^3.3.14",
     "@vue/test-utils": "^2.6.0",
-    "eslint": "^10.15.0",
+    "eslint": "^10.16.0",
     "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-vue": "^10.12.1",
     "happy-dom": "^21.0.4",

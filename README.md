@@ -20,9 +20,9 @@ Headless Vue 3 components for floating panels (dropdowns, menus, listboxes, popo
 npm install sb-floating-panel-vue
 ```
 
-`vue` (`^3.5.13`) and `@floating-ui/vue` (`^2.0.1`) are peer dependencies, so only one copy of each ends up in the bundle. Vue is already in your app. You don't need to install `@floating-ui/vue` yourself: npm 7+ and pnpm 8+ add missing peers automatically. Yarn doesn't, so add it there: `yarn add sb-floating-panel-vue @floating-ui/vue`.
+`vue` (`^3.5.13`) is the only peer dependency: the library uses the Vue already in your app, so there is only one copy of it in the bundle. `@floating-ui/vue` (`^2.0.1`) comes with the package as a regular dependency: you don't install it yourself, with npm, pnpm or Yarn.
 
-If your app already depends on `@floating-ui/vue`, it must be a 2.x version (npm stops with `ERESOLVE` otherwise), and the library uses that same copy. If you only used it to position dropdowns, menus, popovers or tooltips, the library already does that for you: move those panels to its components and remove `@floating-ui/vue` from your `package.json`. Keep it only if your own code still imports it.
+If your app also depends on `@floating-ui/vue` 2.x, the package manager keeps a single copy for both. If you only used it to position dropdowns, menus, popovers or tooltips, the library already does that for you: move those panels to its components and remove `@floating-ui/vue` from your `package.json`. Keep it only if your own code still imports it.
 
 There is no CSS file to import.
 
