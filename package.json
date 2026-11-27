@@ -47,6 +47,7 @@
   ],
   "sideEffects": false,
   "scripts": {
+    "clear": "bash scripts/clear.sh",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
